@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>股票大富翁｜資產排行榜</title>
+<style>
+  :root{
+    --bg:#0a0e14;--panel:#131a24;--line:#212c3b;--txt:#e6edf5;--dim:#7d8ea3;
+    --up:#ff4d5e;--down:#00d68f;--flat:#8b9bb0;--gold:#ffd166;--silver:#c9d4e0;--bronze:#d99b6a;
+    --row:74px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;height:100vh;overflow:hidden}
+  .num{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+  #wrap{max-width:1000px;margin:0 auto;height:100vh;display:flex;flex-direction:column;padding:26px 30px 22px}
+  #head{display:flex;align-items:baseline;gap:18px;margin-bottom:6px;flex-wrap:wrap}
+  #ttl{font-size:15px;letter-spacing:.3em;color:var(--dim)}
+  #round{font-size:30px;font-weight:800}
+  #round small{font-size:14px;color:var(--dim);font-weight:400;margin-left:4px}
+  #state{font-size:13px;padding:5px 14px;border-radius:999px;border:1px solid var(--line);color:var(--dim);letter-spacing:.1em}
+  #state.open{color:var(--up);border-color:rgba(255,77,94,.5);background:rgba(255,77,94,.08)}
+  #state.closing{color:var(--gold);border-color:rgba(255,209,102,.5);background:rgba(255,209,102,.08)}
+  #count{margin-left:auto;font-size:14px;color:var(--dim)}
+  #count b{color:var(--txt);font-weight:700}
+
+  #ticker{display:flex;gap:10px;margin:12px 0 14px;flex-wrap:wrap}
+  .tk{flex:1;min-width:180px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 14px;position:relative;overflow:hidden}
+  .tk::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--k)}
+  .tk .n{font-size:12px;color:var(--dim);margin-bottom:3px}
+  .tk .v{font-size:24px;font-weight:700}
+  .tk .g{font-size:13px;font-weight:600;margin-left:8px}
+
+  #colhead{display:grid;grid-template-columns:78px 1fr 210px 130px;padding:0 18px 8px;font-size:11px;letter-spacing:.2em;color:var(--dim)}
+  #colhead .r{text-align:right}
+
+  #board{
+    flex:1;position:relative;overflow-y:auto;overflow-x:hidden;
+    border-top:1px solid var(--line);padding-top:8px;
+    scrollbar-width:thin;scrollbar-color:#2b3a4d transparent;
+  }
+  #board::-webkit-scrollbar{width:9px}
+  #board::-webkit-scrollbar-thumb{background:#2b3a4d;border-radius:99px}
+  #list{position:relative}
+
+  .row{
+    position:absolute;left:0;right:0;height:calc(var(--row) - 9px);
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    display:grid;grid-template-columns:78px 1fr 210px 130px;align-items:center;
+    padding:0 18px;transition:transform .45s cubic-bezier(.22,.8,.28,1),border-color .3s,background .3s;
+  }
+  .row .rk{font-size:26px;font-weight:800;color:var(--dim)}
+  .row.top1{border-color:rgba(255,209,102,.55);background:rgba(255,209,102,.07)}
+  .row.top1 .rk{color:var(--gold)}
+  .row.top2 .rk{color:var(--silver)}
+  .row.top3 .rk{color:var(--bronze)}
+  .row .nm{font-size:21px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:14px}
+  .row .as{font-size:26px;font-weight:700;text-align:right}
+  .row .rt{font-size:19px;font-weight:700;text-align:right}
+  .row .sub{font-size:11px;color:var(--dim);font-weight:400;display:block;margin-top:2px}
+
+  #empty{padding:60px 0;text-align:center;color:var(--dim);font-size:14px;line-height:2}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="head">
+    <div id="ttl">資產排行榜</div>
+    <div id="round">第 1 回合<small>／ 5</small></div>
+    <div id="state">尚未開盤</div>
+    <div id="count">參與人數 <b id="pn">0</b></div>
+  </div>
+
+  <div id="ticker"></div>
+
+  <div id="colhead">
+    <div>名次</div><div>玩家</div><div class="r">總資產</div><div class="r">投報率</div>
+  </div>
+
+  <div id="board">
+    <div id="list"></div>
+    <div id="empty">目前還沒有玩家進場。<br>請玩家掃碼開啟遊戲頁面並輸入名字。</div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+(function(){
+"use strict";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAoLICybR4P-bzVb_wCwcscsQ3Pd7yiT2s",
+  authDomain: "kuya-stock-game.firebaseapp.com",
+  databaseURL: "https://kuya-stock-game-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kuya-stock-game",
+  storageBucket: "kuya-stock-game.firebasestorage.app",
+  messagingSenderId: "34287693549",
+  appId: "1:34287693549:web:c617470b93badfaa7a66e4"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+
+const $=id=>document.getElementById(id);
+const IDS=['A','B','C'], COLOR={A:'#ffb648',B:'#4da3ff',C:'#c77dff'};
+const START_CASH=100000, ROUNDS=5, ROW=74;
+const money=n=>Math.round(n).toLocaleString('en-US');
+
+let stocks={}, players={}, state='idle', round=1;
+
+/* ───────── 行情 ───────── */
+db.ref('market').on('value',snap=>{
+  const d=snap.val(); if(!d) return;
+  state=d.state||'idle'; round=d.round||1;
+  stocks=d.stocks||{};
+  renderHead(); renderTicker(); renderBoard();
+});
+
+/* ───────── 玩家 ───────── */
+db.ref('players').on('value',snap=>{
+  players=snap.val()||{};
+  renderBoard();
+});
+
+function renderHead(){
+  $('round').innerHTML=`第 ${round} 回合<small>／ ${ROUNDS}</small>`;
+  const st=$('state'); st.className='';
+  if(state==='open'){st.textContent='開盤中';st.className='open';}
+  else if(state==='closing'){st.textContent='關盤倒數';st.className='closing';}
+  else if(state==='closed') st.textContent='已關盤';
+  else st.textContent='尚未開盤';
+}
+
+function renderTicker(){
+  $('ticker').innerHTML=IDS.map(id=>{
+    const s=stocks[id]; if(!s) return '';
+    const chg=(s.price/s.open-1)*100;
+    const col=chg>0.001?'var(--up)':chg<-0.001?'var(--down)':'var(--flat)';
+    return `<div class="tk" style="--k:${COLOR[id]}">
+      <div class="n">${s.name||id}</div>
+      <div><span class="v num" style="color:${col}">${(+s.price).toFixed(1)}</span><span class="g num" style="color:${col}">${chg>0?'+':''}${chg.toFixed(2)}%</span></div>
+    </div>`;
+  }).join('');
+}
+
+function assetOf(p){
+  let v=p.cash||0;
+  IDS.forEach(id=>{
+    const h=(p.hold&&p.hold[id])||0;
+    if(h && stocks[id]) v += h*stocks[id].price;
+  });
+  return v;
+}
+
+function renderBoard(){
+  const arr=Object.keys(players).map(k=>{
+    const p=players[k]||{};
+    const a=assetOf(p);
+    return {id:k,name:p.name||'—',asset:a,ret:(a/START_CASH-1)*100,hold:p.hold||{}};
+  }).sort((x,y)=>y.asset-x.asset);
+
+  $('pn').textContent=arr.length;
+  $('empty').style.display=arr.length?'none':'block';
+  $('list').style.height=(arr.length*ROW)+'px';
+
+  const list=$('list');
+  const seen={};
+  arr.forEach((p,i)=>{
+    let el=list.querySelector('[data-id="'+p.id+'"]');
+    if(!el){
+      el=document.createElement('div');
+      el.className='row'; el.dataset.id=p.id;
+      el.style.transform='translateY('+(i*ROW)+'px)';
+      el.innerHTML='<div class="rk num"></div><div class="nm"></div><div class="as num"></div><div class="rt num"></div>';
+      list.appendChild(el);
+    }
+    el.style.transform='translateY('+(i*ROW)+'px)';
+    el.className='row'+(i===0?' top1':i===1?' top2':i===2?' top3':'');
+    el.querySelector('.rk').textContent=i+1;
+    const units=IDS.reduce((a,id)=>a+((p.hold&&p.hold[id])||0),0);
+    el.querySelector('.nm').innerHTML=p.name+`<span class="sub">持股 ${units} 單位</span>`;
+    el.querySelector('.as').textContent=money(p.asset);
+    const rt=el.querySelector('.rt');
+    rt.textContent=(p.ret>0?'+':'')+p.ret.toFixed(2)+'%';
+    rt.style.color=p.ret>0.001?'var(--up)':p.ret<-0.001?'var(--down)':'var(--flat)';
+    el.querySelector('.as').style.color=p.ret>0.001?'var(--up)':p.ret<-0.001?'var(--down)':'var(--txt)';
+    seen[p.id]=1;
+  });
+  list.querySelectorAll('.row').forEach(el=>{ if(!seen[el.dataset.id]) el.remove(); });
+}
+
+/* 股價持續跳動，排行榜每 500ms 重算一次 */
+setInterval(renderBoard,500);
+})();
+</script>
+</body>
+</html>
