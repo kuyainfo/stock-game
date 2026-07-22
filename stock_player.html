@@ -10,6 +10,11 @@
     --up:#ff4d5e;--down:#00d68f;--flat:#8b9bb0;--a:#ffb648;--b:#4da3ff;--c:#c77dff;--gold:#ffd166;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  .tbtn,.card,#entryBtn{
+    touch-action:manipulation;
+    -webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;
+  }
   body{background:var(--bg);color:var(--txt);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;min-height:100vh}
   .num{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
   #app{max-width:460px;margin:0 auto;padding:14px 14px 190px}
@@ -65,6 +70,8 @@
   #cd span{font-size:14px;letter-spacing:.3em;color:var(--txt)}
   #conn{position:fixed;top:8px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--gold);background:rgba(10,14,20,.95);border:1px solid rgba(255,209,102,.4);padding:4px 12px;border-radius:999px;z-index:30;display:none}
   #conn.show{display:block}
+  #sync{position:fixed;top:8px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--gold);background:rgba(10,14,20,.95);border:1px solid rgba(255,209,102,.4);padding:4px 12px;border-radius:999px;z-index:29;display:none}
+  #sync.show{display:block}
 </style>
 </head>
 <body>
@@ -77,6 +84,7 @@
 </div>
 
 <div id="conn">連線中斷，重新連線中…</div>
+<div id="sync">資料同步中…</div>
 
 <div id="app">
   <div id="hero">
@@ -174,13 +182,21 @@ function holdValue(){ return IDS.reduce((a,id)=> a + (stocks[id]? stocks[id].pri
 function totalAsset(){ return me.cash + holdValue(); }
 function stockPL(s){ return me.hold[s.id] ? (s.price-me.cost[s.id])*me.hold[s.id] : 0; }
 
+let pendingSync=false, retryTimer=null;
 function saveMe(){
   if(!myRef) return;
-  myRef.update({name:me.name,cash:+me.cash.toFixed(2),hold:me.hold,cost:me.cost,total:+totalAsset().toFixed(2),updatedAt:Date.now()});
+  myRef.update({name:me.name,cash:+me.cash.toFixed(2),hold:me.hold,cost:me.cost,total:+totalAsset().toFixed(2),updatedAt:Date.now()})
+    .then(()=>{
+      pendingSync=false;
+      $('sync').classList.remove('show');
+      if(retryTimer){ clearTimeout(retryTimer); retryTimer=null; }
+    })
+    .catch(()=>{
+      pendingSync=true;
+      $('sync').classList.add('show');
+      if(!retryTimer) retryTimer=setTimeout(()=>{ retryTimer=null; saveMe(); },2000);
+    });
 }
-
-/* 資產隨股價變動，定時回寫給排行榜用 */
-setInterval(()=>{ if(ready&&(state==='open'||state==='closing')) saveMe(); },1500);
 
 /* ───────── 交易 ───────── */
 const tradable=()=> state==='open';
