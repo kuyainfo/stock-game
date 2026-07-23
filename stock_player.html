@@ -64,10 +64,34 @@
   .tbtn:disabled{opacity:.28;cursor:not-allowed}
   #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:200px;background:#1c2634;border:1px solid var(--line);padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:40;white-space:nowrap}
   #toast.show{opacity:1}
-  #cd{position:fixed;inset:0;background:rgba(10,14,20,.86);z-index:45;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px}
-  #cd.show{display:flex}
-  #cdNum{font-size:120px;font-weight:800;color:var(--gold);line-height:1}
-  #cd span{font-size:14px;letter-spacing:.3em;color:var(--txt)}
+  /* 結束前提示條：不遮擋操作 */
+  #warn{position:fixed;left:0;right:0;top:0;z-index:28;background:linear-gradient(180deg,rgba(255,209,102,.22),rgba(255,209,102,0));
+        border-bottom:1px solid rgba(255,209,102,.45);padding:9px 14px calc(9px + env(safe-area-inset-top));
+        text-align:center;font-size:13px;font-weight:600;color:var(--gold);letter-spacing:.06em;
+        transform:translateY(-100%);transition:transform .35s cubic-bezier(.22,.8,.28,1);pointer-events:none}
+  #warn.show{transform:translateY(0)}
+  #warn .s{font-family:ui-monospace,monospace;font-size:16px;margin-left:8px}
+
+  /* 回合結算卡 */
+  #sum{position:fixed;inset:0;z-index:46;background:rgba(10,14,20,.9);display:none;
+       align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity .3s}
+  #sum.show{display:flex;opacity:1}
+  #sumBox{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);
+          border-radius:16px;padding:22px 20px 18px}
+  #sumTtl{font-size:12px;letter-spacing:.24em;color:var(--dim);margin-bottom:3px}
+  #sumRound{font-size:20px;font-weight:700;margin-bottom:16px}
+  #sumPlLbl{font-size:11px;color:var(--dim);letter-spacing:.16em}
+  #sumPl{font-size:42px;font-weight:800;line-height:1.15}
+  #sumPct{font-size:16px;font-weight:600;margin-left:8px}
+  #sumTot{font-size:13px;color:var(--dim);margin-top:6px}
+  #sumTot b{color:var(--txt);font-weight:600}
+  #sumList{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+  .sr{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0}
+  .sr .l{display:flex;align-items:center;gap:8px;color:var(--dim)}
+  .sr .l i{width:3px;height:14px;border-radius:2px;display:block}
+  .sr .r{font-family:ui-monospace,monospace;font-weight:600}
+  .sr .h{font-size:11px;color:var(--dim);font-weight:400;margin-right:8px}
+  #sumFoot{margin-top:14px;font-size:11px;color:var(--dim);text-align:center;letter-spacing:.08em}
   #conn{position:fixed;top:8px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--gold);background:rgba(10,14,20,.95);border:1px solid rgba(255,209,102,.4);padding:4px 12px;border-radius:999px;z-index:30;display:none}
   #conn.show{display:block}
   #sync{position:fixed;top:8px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--gold);background:rgba(10,14,20,.95);border:1px solid rgba(255,209,102,.4);padding:4px 12px;border-radius:999px;z-index:29;display:none}
@@ -95,6 +119,7 @@
       <div>現金 <b id="cash" class="num">100,000</b></div>
       <div>本回合損益 <b id="rpl" class="num">0</b></div>
       <div>第 <b id="round">1</b> ／ 5 回合</div>
+      <div>剩餘 <b id="left" class="num">—</b></div>
     </div>
   </div>
   <div class="sec">選一支下單</div>
@@ -115,7 +140,17 @@
   </div>
 </div></div>
 
-<div id="cd"><div id="cdNum">3</div><span>即將關盤</span></div>
+<div id="warn">本回合即將結束<span class="s" id="warnSec"></span></div>
+
+<div id="sum"><div id="sumBox">
+  <div id="sumTtl">回合結算</div>
+  <div id="sumRound">第 1 回合</div>
+  <div id="sumPlLbl">本回合損益</div>
+  <div><span id="sumPl" class="num">0</span><span id="sumPct" class="num"></span></div>
+  <div id="sumTot">結束時總資產 <b id="sumTotal" class="num">0</b></div>
+  <div id="sumList"></div>
+  <div id="sumFoot">點畫面任一處關閉</div>
+</div></div>
 <div id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -145,6 +180,33 @@ const money=n=>Math.round(n).toLocaleString('en-US');
 let stocks={}, state='idle', round=1, sel=null, prevState='idle';
 let me={name:'',cash:START_CASH,hold:{A:0,B:0,C:0},cost:{A:0,B:0,C:0}};
 let roundStartAsset=START_CASH, myRef=null, ready=false;
+let endAt=0, warnSec=10, srvOffset=0;
+let realized={A:0,B:0,C:0};      // 本回合已實現損益（含已賣出部分）
+let sumTimer=null, lastSumRound=0;
+
+db.ref('.info/serverTimeOffset').on('value',s=>{ srvOffset = s.val() || 0; });
+const nowSrv = ()=> Date.now() + srvOffset;
+
+/* 回合起點資產：存 localStorage，重整後若回合相同就沿用 */
+function saveRoundStart(){
+  try{ localStorage.setItem('kuya_stock_rs', JSON.stringify({round, asset:roundStartAsset, realized})); }catch(e){}
+}
+function loadRoundStart(){
+  try{
+    const d=JSON.parse(localStorage.getItem('kuya_stock_rs')||'null');
+    if(d && d.round===round){
+      roundStartAsset=d.asset;
+      realized=Object.assign({A:0,B:0,C:0}, d.realized||{});
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+function beginRound(){
+  roundStartAsset=totalAsset();
+  realized={A:0,B:0,C:0};
+  saveRoundStart();
+}
 
 /* ───────── 身分 ───────── */
 let pid=localStorage.getItem('kuya_stock_pid');
@@ -167,15 +229,75 @@ db.ref('market').on('value',snap=>{
       s.name=r.name; s.price=r.price; s.open=r.open; s.mode=r.mode;
     });
   }
-  if(prevState!=='open'&&state==='open') roundStartAsset=totalAsset();
-  if(prevState!=='closing'&&state==='closing') runCountdown();
+  endAt = d.endAt || 0;
+  if(d.warnSec!=null) warnSec = d.warnSec;
+
+  if(prevState!=='open' && state==='open'){
+    hideSummary();
+    if(!loadRoundStart()) beginRound();
+  }
+  if(prevState==='open' && state!=='open' && ready) showSummary();
   render();
 });
 
-function runCountdown(){
-  let n=3; const cd=$('cd'); cd.classList.add('show'); $('cdNum').textContent=n;
-  const t=setInterval(()=>{ n--; if(n>0){$('cdNum').textContent=n;return;} clearInterval(t); cd.classList.remove('show'); },1000);
+/* ───────── 結束前提示 ───────── */
+function tickWarn(){
+  const w=$('warn');
+  if(state==='open' && endAt){
+    const left=Math.max(0,Math.ceil((endAt-nowSrv())/1000));
+    $('left').textContent = left>=60
+      ? Math.floor(left/60)+':'+String(left%60).padStart(2,'0')
+      : left+' 秒';
+    $('left').style.color = left<=warnSec ? 'var(--gold)' : 'var(--txt)';
+    if(left<=warnSec && left>0){ w.classList.add('show'); $('warnSec').textContent=left; }
+    else w.classList.remove('show');
+  }else{
+    $('left').textContent='—'; $('left').style.color='var(--txt)';
+    w.classList.remove('show');
+  }
+  setTimeout(tickWarn,250);
 }
+tickWarn();
+
+/* ───────── 回合結算卡 ───────── */
+function showSummary(){
+  if(lastSumRound===round) return;   // 同一回合只跳一次
+  lastSumRound=round;
+  const total=totalAsset();
+  const pl=total-roundStartAsset;
+  const pct=roundStartAsset? (pl/roundStartAsset*100) : 0;
+  const col=pl>0?'var(--up)':pl<0?'var(--down)':'var(--txt)';
+  const shown = state==='closed' ? Math.max(1,round-1) : round;
+
+  $('sumRound').textContent = shown>=ROUNDS ? '第 '+ROUNDS+' 回合（最終）' : '第 '+shown+' 回合';
+  $('sumPl').textContent=(pl>0?'+':'')+money(pl);
+  $('sumPl').style.color=col;
+  $('sumPct').textContent=(pl>0?'+':'')+pct.toFixed(2)+'%';
+  $('sumPct').style.color=col;
+  $('sumTotal').textContent=money(total);
+
+  $('sumList').innerHTML=IDS.map(id=>{
+    const s=stocks[id]; if(!s) return '';
+    const unreal = me.hold[id] ? (s.price-me.cost[id])*me.hold[id] : 0;
+    const v = realized[id] + unreal;
+    const c = v>0.5?'var(--up)':v<-0.5?'var(--down)':'var(--dim)';
+    return '<div class="sr"><div class="l"><i style="background:var(--'+
+      (id==='A'?'a':id==='B'?'b':'c')+')"></i>'+s.name+'</div>'+
+      '<div class="r" style="color:'+c+'"><span class="h">持有 '+me.hold[id]+'</span>'+
+      (v>0?'+':'')+money(v)+'</div></div>';
+  }).join('');
+
+  const isFinal = shown>=ROUNDS;
+  $('sumFoot').textContent = isFinal ? '請看大螢幕公布名次' : '點畫面任一處關閉';
+  $('sum').classList.add('show');
+  if(sumTimer) clearTimeout(sumTimer);
+  if(!isFinal) sumTimer=setTimeout(hideSummary,6000);
+}
+function hideSummary(){
+  if(sumTimer){ clearTimeout(sumTimer); sumTimer=null; }
+  $('sum').classList.remove('show');
+}
+$('sum').addEventListener('click',()=>{ if($('sumFoot').textContent.indexOf('關閉')>=0) hideSummary(); });
 
 /* ───────── 資產 ───────── */
 function holdValue(){ return IDS.reduce((a,id)=> a + (stocks[id]? stocks[id].price*me.hold[id] : 0), 0); }
@@ -213,8 +335,10 @@ function sell(s,units){
   if(!tradable()) return toast('目前不能交易');
   const n=Math.min(units,me.hold[s.id]);
   if(n<=0) return toast('沒有持股可賣');
+  realized[s.id] += (s.price - me.cost[s.id]) * n;
   me.cash+=n*s.price; me.hold[s.id]-=n;
   if(me.hold[s.id]===0) me.cost[s.id]=0;
+  saveRoundStart();
   toast(`賣出 ${s.name} ${n} 單位`); saveMe(); render();
 }
 
@@ -245,8 +369,7 @@ function render(){
 
   const pill=$('statePill'); pill.className='';
   if(state==='open'){pill.textContent='開盤中';pill.className='open';}
-  else if(state==='closing'){pill.textContent='關盤倒數';pill.className='closing';}
-  else if(state==='closed') pill.textContent='已關盤';
+  else if(state==='closed') pill.textContent='第 '+Math.max(1,round-1)+' 回合結束，等待下一回合';
   else pill.textContent='尚未開盤';
 
   $('cards').innerHTML=IDS.map(id=>{
@@ -301,7 +424,7 @@ function enter(name){
     const d=snap.val();
     if(d){ me.cash=d.cash; me.hold=Object.assign({A:0,B:0,C:0},d.hold||{}); me.cost=Object.assign({A:0,B:0,C:0},d.cost||{}); }
     else { myRef.set({name,cash:START_CASH,hold:me.hold,cost:me.cost,total:START_CASH,joinedAt:Date.now()}); }
-    roundStartAsset=totalAsset();
+    if(!loadRoundStart()) beginRound();
     ready=true;
     $('entry').style.display='none';
     render();

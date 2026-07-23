@@ -25,9 +25,6 @@
   #clock{margin-left:auto;font-size:22px;color:var(--dim)}
   #chartwrap{flex:1;position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
   canvas{display:block;width:100%;height:100%}
-  #countdown{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,14,20,.72);font-size:150px;font-weight:800;color:var(--gold)}
-  #countdown.show{display:flex}
-  #countdown span{font-size:20px;letter-spacing:.3em;color:var(--txt);position:absolute;bottom:22%}
   #legend{display:flex;gap:22px;margin-top:10px;font-size:12px;color:var(--dim);align-items:center;flex-wrap:wrap}
   .lg{display:flex;align-items:center;gap:7px}
   .lg i{width:16px;height:3px;border-radius:2px;display:block}
@@ -78,7 +75,6 @@
     </div>
     <div id="chartwrap">
       <canvas id="cv"></canvas>
-      <div id="countdown"><div id="cdNum">3</div><span>即將關盤</span></div>
     </div>
     <div id="legend">
       <div class="lg"><i style="background:var(--a)"></i><span id="lgA">A股</span></div>
@@ -99,13 +95,15 @@
     <div id="cards"></div>
 
     <div class="sec">盤面控制</div>
+    <div class="p"><label>回合時間（秒）</label><input id="pRoundSec" value="90"></div>
+    <div class="p"><label>結束前提示（秒）</label><input id="pWarnSec" value="10"></div>
     <div class="btns">
       <button class="act pri full" id="btnOpen">開盤</button>
-      <button class="act warn full" id="btnClose" disabled>結束回合（倒數 3 秒）</button>
+      <button class="act warn full" id="btnEarly" disabled style="font-size:12px;padding:10px 0">提前結束本回合</button>
       <button class="act full" id="btnReset">重置盤面</button>
       <button class="act danger full" id="btnClear">清除所有玩家資料</button>
     </div>
-    <div class="hint">空白鍵＝開盤／結束回合。重置盤面只重設股價與回合，不會動到玩家資產。</div>
+    <div class="hint">空白鍵＝開盤。開盤後自動計時，時間到自動關盤；「提前結束」僅供臨時中斷使用。重置盤面只重設股價與回合，不會動到玩家資產。</div>
 
     <div class="divider"></div>
 
@@ -166,8 +164,11 @@ db.ref('.info/connected').on('value', s=>{
 const P = {
   tickMin:0.8,tickMax:2.0,ampS:0.015,ampG:0.022,ampP:0.030,
   drift:0.0025,limit:0.15,modeMin:8,modeMax:20,windowSec:84,
-  baseA:1000,baseB:1000,baseC:1000
+  baseA:1000,baseB:1000,baseC:1000,roundSec:90,warnSec:10
 };
+/* 伺服器時間與本機的偏移，用於各裝置倒數同步 */
+let srvOffset=0;
+db.ref('.info/serverTimeOffset').on('value',s=>{ srvOffset = s.val() || 0; });
 const MAX_POINTS = 200, ROUNDS = 5;
 const DEFS = [
   {id:'A',color:'--a',w:{stable:.60,growth:.30,spec:.10}},
@@ -177,7 +178,7 @@ const DEFS = [
 const MODE_LABEL={stable:'穩健',growth:'成長',spec:'投機'};
 const MODE_SHAPE={stable:1.5,growth:1.0,spec:0.65};
 
-let stocks=[], state='idle', round=1, roundStart=0, timers=[], cdTimer=null, restoring=true;
+let stocks=[], state='idle', round=1, roundStart=0, timers=[], restoring=true;
 
 const rand=(a,b)=>a+Math.random()*(b-a);
 const ampOf=m=>m==='stable'?P.ampS:m==='growth'?P.ampG:P.ampP;
@@ -192,7 +193,7 @@ function makeStocks(){
 
 /* ───────── 寫入 Firebase ───────── */
 function pushMarket(){
-  const o={state,round,stocks:{}};
+  const o={state,round,endAt,warnSec:P.warnSec,roundSec:P.roundSec,stocks:{}};
   stocks.forEach(s=>{ o.stocks[s.id]={name:s.name,price:+s.price.toFixed(2),open:+s.open.toFixed(2),mode:s.mode,ticks:s.ticks}; });
   refMarket.update(o);
 }
@@ -220,7 +221,7 @@ function tick(s){
   schedule(s);
 }
 function schedule(s){
-  timers.push(setTimeout(()=>{ if(state==='open'||state==='closing') tick(s); }, rand(P.tickMin,P.tickMax)*1000));
+  timers.push(setTimeout(()=>{ if(state==='open') tick(s); }, rand(P.tickMin,P.tickMax)*1000));
 }
 function startTicking(){
   stopTicking();
@@ -230,33 +231,34 @@ function startTicking(){
 function stopTicking(){ timers.forEach(clearTimeout); timers=[]; }
 
 /* ───────── 盤面控制 ───────── */
+let endAt=0;          // 本回合結束的伺服器時間戳
+let autoTimer=null;
+
 function openMarket(){
-  if(state==='open'||state==='closing') return;
+  if(state==='open') return;
+  readParams();
   stocks.forEach(s=>{ s.open=s.price; s.hi=s.price; s.lo=s.price; s.ticks=0; s.hist=[{t:performance.now(),p:s.price}]; });
   state='open'; roundStart=performance.now();
+  endAt = Date.now() + srvOffset + P.roundSec*1000;
   pushMarket(); startTicking(); render();
+  if(autoTimer) clearTimeout(autoTimer);
+  autoTimer=setTimeout(()=>{ closeMarket(); }, P.roundSec*1000);
 }
+
 function closeMarket(){
   if(state!=='open') return;
-  state='closing'; pushMarket(); render();
-  let n=3;
-  const cd=$('countdown'), num=$('cdNum');
-  cd.classList.add('show'); num.textContent=n;
-  cdTimer=setInterval(()=>{
-    n--;
-    if(n>0){ num.textContent=n; return; }
-    clearInterval(cdTimer); cd.classList.remove('show');
-    stopTicking(); state='closed';
-    if(round<ROUNDS) round++;
-    pushMarket(); render();
-  },1000);
+  if(autoTimer){ clearTimeout(autoTimer); autoTimer=null; }
+  stopTicking();
+  state='closed'; endAt=0;
+  if(round<ROUNDS) round++;
+  pushMarket(); render();
 }
+
 function resetBoard(){
   stopTicking();
-  if(cdTimer) clearInterval(cdTimer);
-  $('countdown').classList.remove('show');
+  if(autoTimer){ clearTimeout(autoTimer); autoTimer=null; }
   readParams(); makeStocks();
-  state='idle'; round=1;
+  state='idle'; round=1; endAt=0;
   pushMarket(); render();
 }
 function clearPlayers(){ refPlayers.remove(); }
@@ -275,9 +277,23 @@ refMarket.once('value').then(snap=>{
       s.hist=[{t:performance.now(),p:r.price}];
     });
     round=d.round||1;
-    state=(d.state==='closing')?'open':(d.state||'idle');
+    state=(d.state||'idle');
     $('nA').value=stocks[0].name; $('nB').value=stocks[1].name; $('nC').value=stocks[2].name;
-    if(state==='open'){ roundStart=performance.now(); startTicking(); }
+    if(d.roundSec) $('pRoundSec').value=d.roundSec;
+    if(d.warnSec!=null) $('pWarnSec').value=d.warnSec;
+    readParams();
+    if(state==='open'){
+      roundStart=performance.now();
+      endAt=d.endAt||0;
+      const left=endAt ? endAt-(Date.now()+srvOffset) : 0;
+      if(left>0){
+        startTicking();
+        if(autoTimer) clearTimeout(autoTimer);
+        autoTimer=setTimeout(()=>{ closeMarket(); }, left);
+      }else{
+        state='closed'; endAt=0;
+      }
+    }
     pushMarket();
   }else{
     makeStocks(); pushMarket();
@@ -303,9 +319,15 @@ function readParams(){
   P.baseA=numOf($('pBaseA'),1000);
   P.baseB=numOf($('pBaseB'),1000);
   P.baseC=numOf($('pBaseC'),1000);
+  P.roundSec=Math.max(10,numOf($('pRoundSec'),90));
+  P.warnSec=Math.max(0,Math.min(P.roundSec,numOf($('pWarnSec'),10)));
 }
 ['pTickMin','pTickMax','pAmpS','pAmpG','pAmpP','pDrift','pLimit','pModeMin','pModeMax','pWindow']
   .forEach(id=>$(id).addEventListener('change',readParams));
+['pRoundSec','pWarnSec'].forEach(id=>$(id).addEventListener('change',()=>{
+  readParams();
+  refMarket.update({warnSec:P.warnSec,roundSec:P.roundSec});
+}));
 
 /* ───────── 圖表 ───────── */
 const cv=$('cv'), ctx=cv.getContext('2d');
@@ -399,22 +421,24 @@ function render(){
   const st=$('state'); st.className='';
   if(state==='idle') st.textContent='尚未開盤';
   else if(state==='open'){ st.textContent='開盤中'; st.className='open'; }
-  else if(state==='closing'){ st.textContent='關盤倒數'; st.className='closing'; }
   else st.textContent='已關盤';
-  $('btnOpen').disabled=(state==='open'||state==='closing');
-  $('btnClose').disabled=(state!=='open');
+  $('btnOpen').disabled=(state==='open');
+  $('btnEarly').disabled=(state!=='open');
 }
 function loop(){
   if(stocks.length) $('cards').innerHTML=cardsHTML();
-  if(state==='open'||state==='closing'){
-    const sec=Math.floor((performance.now()-roundStart)/1000);
-    $('clock').textContent=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
+  if(state==='open' && endAt){
+    const left=Math.max(0,Math.ceil((endAt-(Date.now()+srvOffset))/1000));
+    $('clock').textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');
+    $('clock').style.color = left<=P.warnSec ? 'var(--gold)' : 'var(--dim)';
+  }else{
+    $('clock').style.color='var(--dim)';
   }
   setTimeout(loop,200);
 }
 
 $('btnOpen').onclick=openMarket;
-$('btnClose').onclick=closeMarket;
+$('btnEarly').onclick=()=>{ if(confirm('提前結束本回合？')) closeMarket(); };
 $('btnReset').onclick=()=>{ if(confirm('重置盤面？股價與回合數回到初始值，玩家資產不受影響。')) resetBoard(); };
 $('btnClear').onclick=()=>{ if(confirm('清除所有玩家資料？所有人的現金與持股都會消失，無法復原。')) clearPlayers(); };
 $('btnPct').onclick=()=>{axisMode='pct';$('btnPct').classList.add('on');$('btnAbs').classList.remove('on');};
@@ -422,7 +446,7 @@ $('btnAbs').onclick=()=>{axisMode='abs';$('btnAbs').classList.add('on');$('btnPc
 document.addEventListener('keydown',e=>{
   if(e.code!=='Space'||e.target.tagName==='INPUT') return;
   e.preventDefault();
-  (state==='open')?closeMarket():openMarket();
+  if(state!=='open') openMarket();
 });
 
 resize(); loop(); draw();
