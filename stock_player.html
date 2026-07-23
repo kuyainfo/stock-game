@@ -96,9 +96,52 @@
   #conn.show{display:block}
   #sync{position:fixed;top:8px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--gold);background:rgba(10,14,20,.95);border:1px solid rgba(255,209,102,.4);padding:4px 12px;border-radius:999px;z-index:29;display:none}
   #sync.show{display:block}
+  /* ───── 開場故事 / 規則說明 ───── */
+  #story,#rules{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;padding:34px 26px;text-align:center;overflow-y:auto}
+  #story.on,#rules.on{display:flex}
+  #story{z-index:70}
+  #rules{z-index:60}
+  .skipBtn{position:absolute;top:14px;right:14px;font-size:12px;color:var(--dim);background:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px;touch-action:manipulation}
+  #storyTitle{font-size:24px;letter-spacing:.06em;margin-bottom:24px;opacity:0;transition:opacity .6s}
+  .ln{font-size:15px;color:var(--dim);line-height:1.85;margin-bottom:13px;opacity:0;transform:translateY(6px);transition:opacity .7s,transform .7s}
+  .ln.big{font-size:20px;font-weight:700;color:var(--up);margin:16px 0}
+  .ln.on,#storyTitle.on{opacity:1;transform:none}
+  #storyBtn{margin-top:26px;opacity:0;transition:opacity .5s;pointer-events:none}
+  #storyBtn.on{opacity:1;pointer-events:auto}
+  #storyBtn,#rulesBtn{background:var(--up);color:#fff;border:0;border-radius:10px;font-size:16px;font-weight:700;padding:14px 32px;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+  #rules h2{font-size:20px;margin-bottom:24px;letter-spacing:.06em}
+  .rrow{display:flex;gap:14px;align-items:flex-start;text-align:left;max-width:320px;width:100%;margin-bottom:18px}
+  .rrow .ri{font-size:22px;line-height:1.35}
+  .rrow b{display:block;font-size:15px;margin-bottom:3px}
+  .rrow i{font-style:normal;font-size:13px;color:var(--dim);line-height:1.7}
+  #rulesBtn{margin-top:12px}
 </style>
 </head>
 <body>
+
+<div id="story">
+  <button class="skipBtn">跳過</button>
+  <h1 id="storyTitle">股票大富翁</h1>
+  <p class="ln">年終獎金今天入帳。</p>
+  <p class="ln">你盯著那串數字看了很久。</p>
+  <p class="ln big">「我要讓它變兩倍。」</p>
+  <p class="ln">十萬塊，一毛不留全進了市場。</p>
+  <p class="ln">三支股票、五個回合，<br>沒有手續費，也沒有明牌。</p>
+  <p class="ln">隔壁桌的同事已經開始下單了。</p>
+  <p class="ln">你深吸一口氣——</p>
+  <p class="ln big">開盤。</p>
+  <button id="storyBtn">看遊戲規則 →</button>
+</div>
+
+<div id="rules">
+  <button class="skipBtn">跳過</button>
+  <h2>遊戲規則</h2>
+  <div class="rrow"><span class="ri">💰</span><div><b>資金</b><i>每人起始 10 萬，全場同一條起跑線</i></div></div>
+  <div class="rrow"><span class="ri">📈</span><div><b>操作</b><i>開盤後隨時買、隨時賣，六顆按鈕直接下單</i></div></div>
+  <div class="rrow"><span class="ri">⏱</span><div><b>回合</b><i>共 5 回合，持股會延續到下一回合</i></div></div>
+  <div class="rrow"><span class="ri">🏆</span><div><b>勝負</b><i>最後以「現金＋持股市值」比總資產</i></div></div>
+  <button id="rulesBtn">我準備好了</button>
+</div>
 
 <div id="entry">
   <h1>股票大富翁</h1>
@@ -219,6 +262,7 @@ db.ref('.info/connected').on('value',s=>{ $('conn').classList.toggle('show', s.v
 db.ref('market').on('value',snap=>{
   const d=snap.val(); if(!d) return;
   prevState=state; state=d.state||'idle'; round=d.round||1;
+  if(state==='open') skipIntro();
   if(d.stocks){
     IDS.forEach(id=>{
       const r=d.stocks[id]; if(!r) return;
@@ -437,6 +481,38 @@ $('entryBtn').onclick=()=>{
 };
 $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') $('entryBtn').click(); });
 if(savedName){ $('nameInput').value=savedName; }
+
+/* ───────── 開場故事 / 規則說明 ───────── */
+var introDone=false;
+function skipIntro(){
+  if(introDone) return;
+  introDone=true;
+  $('story').classList.remove('on');
+  $('rules').classList.remove('on');
+}
+(function intro(){
+  if(savedName){ introDone=true; return; }
+  var st=$('story');
+  var seq=[$('storyTitle')].concat(Array.prototype.slice.call(st.querySelectorAll('.ln')));
+  var i=0, timer=null;
+  st.classList.add('on');
+  function step(){
+    if(i>=seq.length){ $('storyBtn').classList.add('on'); return; }
+    seq[i++].classList.add('on');
+    timer=setTimeout(step,900);
+  }
+  function showAll(){
+    clearTimeout(timer);
+    seq.forEach(function(el){ el.classList.add('on'); });
+    i=seq.length;
+    $('storyBtn').classList.add('on');
+  }
+  st.addEventListener('click',function(e){ if(e.target.tagName!=='BUTTON') showAll(); });
+  setTimeout(step,400);
+  $('storyBtn').onclick=function(){ st.classList.remove('on'); $('rules').classList.add('on'); };
+  $('rulesBtn').onclick=skipIntro;
+  Array.prototype.forEach.call(document.querySelectorAll('.skipBtn'),function(b){ b.onclick=skipIntro; });
+})();
 
 setInterval(render,300);
 })();
