@@ -114,17 +114,18 @@
     <div class="hint">改名稱或初始價格後，按「重置盤面」才會套用並同步到所有裝置。</div>
 
     <div class="sec">跳動參數</div>
-    <div class="p"><label>tick 間隔下限（秒）</label><input id="pTickMin" value="0.8"></div>
-    <div class="p"><label>tick 間隔上限（秒）</label><input id="pTickMax" value="2.0"></div>
+    <div class="p"><label>tick 間隔下限（秒）</label><input id="pTickMin" value="0.7"></div>
+    <div class="p"><label>tick 間隔上限（秒）</label><input id="pTickMax" value="1.6"></div>
     <div class="p"><label>穩健期單跳上限 %</label><input id="pAmpS" value="1.5"></div>
-    <div class="p"><label>成長期單跳上限 %</label><input id="pAmpG" value="2.2"></div>
-    <div class="p"><label>投機期單跳上限 %</label><input id="pAmpP" value="3.0"></div>
+    <div class="p"><label>成長期單跳上限 %</label><input id="pAmpG" value="2.0"></div>
+    <div class="p"><label>投機期單跳上限 %</label><input id="pAmpP" value="5.0"></div>
     <div class="p"><label>成長期每跳偏移 %</label><input id="pDrift" value="0.25"></div>
-    <div class="p"><label>漲跌停 ±%</label><input id="pLimit" value="15"></div>
+    <div class="p"><label>投機期方向強度 %</label><input id="pDirP" value="0.8"></div>
+    <div class="p"><label>漲跌停 ±%</label><input id="pLimit" value="100000"></div>
 
     <div class="sec">狀態切換</div>
-    <div class="p"><label>狀態維持下限（秒）</label><input id="pModeMin" value="8"></div>
-    <div class="p"><label>狀態維持上限（秒）</label><input id="pModeMax" value="20"></div>
+    <div class="p"><label>狀態維持下限（秒）</label><input id="pModeMin" value="4"></div>
+    <div class="p"><label>狀態維持上限（秒）</label><input id="pModeMax" value="18"></div>
 
     <div class="sec">趨勢線</div>
     <div class="p"><label>視窗長度（秒）</label><input id="pWindow" value="84"></div>
@@ -162,8 +163,8 @@ db.ref('.info/connected').on('value', s=>{
 
 /* ───────── 參數 ───────── */
 const P = {
-  tickMin:0.8,tickMax:2.0,ampS:0.015,ampG:0.022,ampP:0.030,
-  drift:0.0025,limit:0.15,modeMin:8,modeMax:20,windowSec:84,
+  tickMin:0.7,tickMax:1.6,ampS:0.015,ampG:0.020,ampP:0.050,
+  drift:0.0025,dirP:0.008,limit:1000,modeMin:4,modeMax:18,windowSec:84,
   baseA:1000,baseB:1000,baseC:1000,roundSec:90,warnSec:10
 };
 /* 伺服器時間與本機的偏移，用於各裝置倒數同步 */
@@ -171,9 +172,9 @@ let srvOffset=0;
 db.ref('.info/serverTimeOffset').on('value',s=>{ srvOffset = s.val() || 0; });
 const MAX_POINTS = 200, ROUNDS = 5;
 const DEFS = [
-  {id:'A',color:'--a',w:{stable:.60,growth:.30,spec:.10}},
-  {id:'B',color:'--b',w:{stable:.25,growth:.55,spec:.20}},
-  {id:'C',color:'--c',w:{stable:.15,growth:.25,spec:.60}}
+  {id:'A',color:'--a',w:{stable:.60,growth:.25,spec:.15}},
+  {id:'B',color:'--b',w:{stable:.25,growth:.45,spec:.30}},
+  {id:'C',color:'--c',w:{stable:.10,growth:.15,spec:.75}}
 ];
 const MODE_LABEL={stable:'穩健',growth:'成長',spec:'投機'};
 const MODE_SHAPE={stable:1.5,growth:1.0,spec:0.65};
@@ -204,12 +205,20 @@ function pushStock(s){
 /* ───────── 價格引擎 ───────── */
 function tick(s){
   const now=performance.now();
-  if(now>s.modeUntil){ s.mode=pickMode(s.w); s.modeUntil=now+rand(P.modeMin,P.modeMax)*1000; }
+  if(now>s.modeUntil){
+    s.mode=pickMode(s.w);
+    s.modeUntil=now+rand(P.modeMin,P.modeMax)*1000;
+    /* 進入投機期時擲一次方向，整段維持同向；其他狀態無方向 */
+    s.dir = s.mode==='spec' ? (Math.random()<0.5?-1:1) : 0;
+  }
   const amp=ampOf(s.mode);
   const mag=amp*Math.pow(Math.random(),MODE_SHAPE[s.mode]);
-  const drift=s.mode==='growth'?P.drift:0;
+  const drift = s.mode==='growth' ? P.drift
+              : s.mode==='spec'   ? (s.dir||0)*P.dirP
+              : 0;
   let pct=drift+(Math.random()<0.5?-mag:mag);
-  pct=Math.max(-amp,Math.min(amp,pct));
+  const bound=amp+Math.abs(drift);
+  pct=Math.max(-bound,Math.min(bound,pct));
   let np=s.price*(1+pct);
   np=Math.min(s.open*(1+P.limit),Math.max(s.open*(1-P.limit),np));
   s.price=np; s.ticks++;
@@ -312,7 +321,8 @@ function readParams(){
   P.ampG=numOf($('pAmpG'),2.2)/100;
   P.ampP=numOf($('pAmpP'),3.0)/100;
   P.drift=numOf($('pDrift'),0.25)/100;
-  P.limit=numOf($('pLimit'),15)/100;
+  P.dirP=Math.min(0.02,Math.max(0,numOf($('pDirP'),0.8)/100));
+  P.limit=numOf($('pLimit'),100000)/100;
   P.modeMin=numOf($('pModeMin'),8);
   P.modeMax=Math.max(P.modeMin,numOf($('pModeMax'),20));
   P.windowSec=Math.max(10,numOf($('pWindow'),84));
@@ -322,7 +332,7 @@ function readParams(){
   P.roundSec=Math.max(10,numOf($('pRoundSec'),90));
   P.warnSec=Math.max(0,Math.min(P.roundSec,numOf($('pWarnSec'),10)));
 }
-['pTickMin','pTickMax','pAmpS','pAmpG','pAmpP','pDrift','pLimit','pModeMin','pModeMax','pWindow']
+['pTickMin','pTickMax','pAmpS','pAmpG','pAmpP','pDrift','pDirP','pLimit','pModeMin','pModeMax','pWindow']
   .forEach(id=>$(id).addEventListener('change',readParams));
 ['pRoundSec','pWarnSec'].forEach(id=>$(id).addEventListener('change',()=>{
   readParams();
@@ -348,7 +358,12 @@ function draw(){
   const now=performance.now(), t1=now, t0=now-P.windowSec*1000;
   let ymin,ymax,toY;
   if(axisMode==='pct'){
-    const span=P.limit*100+3; ymin=-span; ymax=span;
+    let lo=Infinity,hi=-Infinity;
+    stocks.forEach(s=>s.hist.forEach(pt=>{ if(pt.t>=t0){ const v=(pt.p/s.open-1)*100; lo=Math.min(lo,v); hi=Math.max(hi,v); } }));
+    if(!isFinite(lo)){ lo=-1; hi=1; }
+    let span=Math.max(Math.abs(lo),Math.abs(hi))*1.2;
+    span=Math.max(3,Math.min(span,P.limit*100+3));
+    ymin=-span; ymax=span;
     toY=(s,p)=>padT+ih*(1-((p/s.open-1)*100-ymin)/(ymax-ymin));
   }else{
     let lo=Infinity,hi=-Infinity;
@@ -370,7 +385,7 @@ function draw(){
     ctx.fillText(axisMode==='pct'?val.toFixed(1)+'%':val.toFixed(0),padL-10,y);
   }
   if(axisMode==='pct'){
-    [P.limit*100,-P.limit*100].forEach(v=>{
+    (P.limit*100<=ymax?[P.limit*100,-P.limit*100]:[]).forEach(v=>{
       const y=padT+ih*(1-(v-ymin)/(ymax-ymin));
       ctx.strokeStyle=v>0?'rgba(255,77,94,.34)':'rgba(0,214,143,.34)';
       ctx.setLineDash([5,5]); ctx.lineWidth=1;
