@@ -534,6 +534,8 @@ function tierOf(ret,rank,total){
 function showFinal(ret,rank,total,topExact){
   const t=pickTitle(ret,rank,total), el=$('sfTitle');
   $('sfCard').className=tierOf(ret,rank,total);
+  /* 稱號回寫，讓大螢幕的頒獎畫面顯示同一個稱號（只寫一次、只有四個字） */
+  if(myRef) myRef.update({title:t[0]}).catch(()=>{});
   el.className=''; el.textContent=t[0]; void el.offsetWidth; el.classList.add('pop');
   $('sfLine').textContent=t[1];
   $('sfRank').innerHTML=rankHTML(rank,total,topExact);

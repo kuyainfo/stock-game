@@ -125,6 +125,60 @@
   @keyframes stageIn{0%{transform:scale(1.35);filter:blur(8px);opacity:0}16%{transform:scale(1);filter:blur(0);opacity:1}80%{transform:scale(1.02)}100%{transform:scale(1.06)}}
   @keyframes barSweep{0%{transform:scaleX(0)}32%{transform:scaleX(1)}100%{transform:scaleX(1)}}
   @media (prefers-reduced-motion:reduce){.row.top1::after,.rk.pop .medal,.row .rise.show,#leaderFx.play,#leaderTag.play,#clock.pulse,#cd.beat,#stage.play,#stage.play .st-main,#stage.play .st-bar{animation-duration:.01s}}
+  /* ───── 頒獎模式 ───── */
+  #wrap.award #chartWrap,#wrap.award #legend,#wrap.award #colhead,#wrap.award #board{opacity:0;pointer-events:none;transition:opacity .5s}
+  #wrap.award #clock,#wrap.award #cd{display:none}
+  #podium,#credits{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .7s}
+  #wrap.award #podium,#wrap.award #credits{opacity:1}
+  /* 左半邊：頒獎台 */
+  #podium{display:flex;align-items:flex-end;justify-content:center;gap:18px;padding:0 10px 8px;overflow:hidden}
+  .pod{flex:1;height:100%;max-width:260px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;position:relative}
+  .pod .who{text-align:center;margin-bottom:12px;position:relative;z-index:2}
+  .pod .medal{width:54px;height:60px;margin:0 auto 6px}
+  .pod .nm{font-size:26px;font-weight:800;letter-spacing:.03em}
+  .pod .ttl{display:inline-block;margin-top:7px;font-size:14px;font-weight:700;padding:4px 14px;border-radius:999px;
+    border:1px solid var(--pc);color:var(--pc);background:rgba(255,255,255,.04)}
+  .pod .ret{margin-top:8px;font-size:20px;font-weight:700}
+  .pod .base{width:100%;border-radius:12px 12px 0 0;border:1px solid var(--pc);border-bottom:0;
+    background:linear-gradient(180deg,var(--pbg),rgba(19,26,36,.25));display:flex;align-items:flex-start;justify-content:center;
+    padding-top:10px;font-size:34px;font-weight:900;color:var(--pc);font-family:"IBM Plex Mono",ui-monospace,monospace}
+  .pod.p1{--pc:#ffd166;--pbg:rgba(255,209,102,.22)}
+  .pod.p2{--pc:#c9d4e0;--pbg:rgba(201,212,224,.16)}
+  .pod.p3{--pc:#d99b6a;--pbg:rgba(217,155,106,.16)}
+  .pod.p1 .base{height:46%;box-shadow:0 0 40px rgba(255,209,102,.28)}
+  .pod.p2 .base{height:32%}
+  .pod.p3 .base{height:24%}
+  .pod.p1 .nm{font-size:32px}
+  /* 第一名光柱 */
+  #beam{position:absolute;left:50%;top:-6%;width:36%;height:108%;transform:translateX(-50%);pointer-events:none;
+    background:linear-gradient(180deg,rgba(255,209,102,.28),rgba(255,209,102,.07) 55%,rgba(255,209,102,0) 88%);
+    clip-path:polygon(38% 0,62% 0,100% 100%,0 100%);animation:beamBreathe 3.4s ease-in-out infinite}
+  @keyframes beamBreathe{0%,100%{opacity:.7}50%{opacity:1}}
+  .pod .who,.pod .base{animation:podRise .9s cubic-bezier(.2,.9,.3,1) both}
+  .pod.p2 .who,.pod.p2 .base{animation-delay:.12s}
+  .pod.p3 .who,.pod.p3 .base{animation-delay:.24s}
+  @keyframes podRise{0%{transform:translateY(26px);opacity:0}100%{transform:translateY(0);opacity:1}}
+  /* 彩帶 */
+  #confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  #confetti i{position:absolute;top:-12%;width:7px;height:12px;border-radius:1px;opacity:.85;animation:confFall linear infinite}
+  @keyframes confFall{0%{transform:translateY(-10%) rotate(0)}100%{transform:translateY(115vh) rotate(720deg)}}
+  /* 右半邊：循環捲動名單 */
+  #credits{display:flex;flex-direction:column;overflow:hidden}
+  #crHead{flex:none;text-align:center;font-size:12px;letter-spacing:.24em;color:var(--dim);padding:2px 0 10px}
+  #crView{flex:1;overflow:hidden;position:relative;
+    -webkit-mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent);
+    mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent)}
+  #crRoll{position:absolute;left:0;right:0;top:0}
+  #crRoll.run{animation:credRoll linear infinite}
+  #crView.static{-webkit-mask-image:none;mask-image:none;padding-top:4px}
+  @keyframes credRoll{0%{transform:translateY(0)}100%{transform:translateY(-50%)}}
+  .cr{display:grid;grid-template-columns:54px 1fr auto;align-items:center;gap:10px;padding:9px 14px;
+    border-bottom:1px solid rgba(255,255,255,.05)}
+  .cr .r{font-size:17px;font-weight:700;color:var(--dim);font-family:"IBM Plex Mono",ui-monospace,monospace}
+  .cr .n{font-size:19px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cr .t{font-size:12px;color:var(--dim);margin-left:8px}
+  .cr .v{font-size:17px;font-weight:700;font-family:"IBM Plex Mono",ui-monospace,monospace}
+  @media (prefers-reduced-motion:reduce){#crRoll.run,#confetti i,#beam,.pod .who,.pod .base{animation:none}}
 </style>
 </head>
 <body>
@@ -148,11 +202,13 @@
     <div id="chartCol">
       <div id="chartWrap"><canvas id="cv"></canvas><div id="cd"></div></div>
       <div id="legend"></div>
+      <div id="podium"><div id="confetti"></div></div>
     </div>
 
     <div id="rankCol">
       <div id="leaderTag"></div>
       <div id="colhead"><div>名次</div><div>玩家</div><div class="r">投報率</div></div>
+      <div id="credits"><div id="crHead"></div><div id="crView"><div id="crRoll"></div></div></div>
       <div id="board">
         <div id="list"></div>
         <div id="empty">目前還沒有玩家進場。<br>請玩家掃碼進場並輸入名字。</div>
@@ -185,6 +241,9 @@ const START_CASH=100000, ROUNDS=5, ROW=64, TOP_BIG=15, WINDOW_SEC=84;
 /* 最終結算：前幾名在玩家手機顯示精確名次，其餘顯示區間。
    預設 20；網址加 ?top=30 可改成前 30 名（例：stock_rank.html?top=30） */
 const TOP_EXACT=(()=>{ const v=parseInt(new URLSearchParams(location.search).get('top'),10); return v>0?v:20; })();
+/* 頒獎模式：捲動名單顯示到第幾名（預設 50，網址加 ?list=80 可調）、等待手機回傳稱號的上限 */
+const LIST_MAX=(()=>{ const v=parseInt(new URLSearchParams(location.search).get('list'),10); return v>0?v:50; })();
+const AWARD_WAIT=8000, ROLL_PER_ROW=900, MIN_ROLL_ROWS=8;
 
 let stocks={}, players={}, state='idle', round=1;
 let endAt=0, roundSec=90, warnSec=10, srvOffset=0;
@@ -202,10 +261,16 @@ db.ref('market').on('value',snap=>{
   const d=snap.val(); if(!d) return;
   state=d.state||'idle'; round=d.round||1;
   if(mReady && prevState!==state){
+    if(state==='open'||state==='idle') exitAward();
     if(state==='open') playStage('第 '+round+' 回合','開盤','--up');
     else if(state==='closed' && prevState==='open'){
       playStage(prevRound>=ROUNDS?'最終回合':'第 '+prevRound+' 回合','收盤','--gold');
-      if(prevRound>=ROUNDS) setTimeout(writeFinalRanks,3000);   // 等最後幾筆成交寫完再算
+      if(prevRound>=ROUNDS){
+        setTimeout(writeFinalRanks,3000);   // 等最後幾筆成交寫完再算
+        awardWaiting=true;
+        clearTimeout(awardTimer);
+        awardTimer=setTimeout(enterAward,AWARD_WAIT);   // 上限 8 秒，稱號提早到齊就提早進場
+      }
     }
   }
   prevState=state; prevRound=round; mReady=true;
@@ -234,7 +299,10 @@ db.ref('market').on('value',snap=>{
 });
 
 /* ───────── 玩家 ───────── */
-db.ref('players').on('value',snap=>{ players=snap.val()||{}; renderBoard(); });
+db.ref('players').on('value',snap=>{
+  players=snap.val()||{}; renderBoard();
+  if(awardWaiting && topTitlesReady()) enterAward();
+});
 
 /* ───────── 頂部 ───────── */
 function renderHead(){
@@ -501,6 +569,95 @@ function playLeader(name,id){
   const row=$('list').querySelector('[data-id="'+id+'"]');
   if(row) replay(row.querySelector('.rk'),'pop');
 }
+/* ───────── 頒獎模式 ───────── */
+let awardOn=false, awardWaiting=false, awardTimer=null;
+const POD_COLOR=['--gold','--flat','--a'];
+function awardArr(){
+  return Object.keys(players).map(k=>{
+    const p=players[k]||{}, a=assetOf(p);
+    return {id:k,name:p.name||'—',title:p.title||'',ret:(a/START_CASH-1)*100,asset:a};
+  }).sort((x,y)=>y.asset-x.asset);
+}
+/* 稱號：優先用手機回傳的，沒有就用名次與報酬率自算，前三名保底用冠亞季軍 */
+function titleFor(p,i,total){
+  if(p.title) return p.title;
+  const rank=i+1;
+  if(rank===1 && p.ret>0) return '當沖之神';
+  if(rank<=Math.ceil(total*0.1) && p.ret>0) return '操盤高手';
+  if(i<3) return ['冠軍','亞軍','季軍'][i];
+  if(p.ret>1) return '小賺入袋';
+  if(p.ret>=-1) return '平安下莊';
+  if(p.ret>=-20) return '小虧當繳稅';
+  return '繳學費的勇者';
+}
+function topTitlesReady(){
+  const arr=awardArr();
+  if(arr.length<3) return arr.length>0 && arr.every(p=>p.title);
+  return arr.slice(0,3).every(p=>p.title);
+}
+function retHTML(v){
+  const c=v>0.01?'var(--up)':v<-0.01?'var(--down)':'var(--flat)';
+  return '<span class="v" style="color:'+c+'">'+(v>0?'+':'')+v.toFixed(1)+'%</span>';
+}
+function enterAward(){
+  if(awardOn) return;
+  clearTimeout(awardTimer); awardWaiting=false; awardOn=true;
+  const arr=awardArr(), total=arr.length;
+  $('round').innerHTML='最終結算';
+  $('state').textContent='頒獎';
+
+  /* 頒獎台：第二名在左、第一名置中、第三名在右 */
+  const order=[1,0,2];
+  $('podium').innerHTML='<div id="confetti"></div>'+order.map(i=>{
+    const p=arr[i];
+    if(!p) return '<div class="pod p'+(i+1)+'"></div>';
+    return '<div class="pod p'+(i+1)+'">'+(i===0?'<div id="beam"></div>':'')+
+      '<div class="who">'+medalSVG(i+1)+
+        '<div class="nm">'+p.name+'</div>'+
+        '<div class="ttl">'+titleFor(p,i,total)+'</div>'+
+        '<div class="ret" style="color:'+(p.ret>0.01?'var(--up)':p.ret<-0.01?'var(--down)':'var(--flat)')+'">'+
+          (p.ret>0?'+':'')+p.ret.toFixed(2)+'%</div>'+
+      '</div><div class="base">'+(i+1)+'</div></div>';
+  }).join('');
+  confetti(40);
+
+  /* 捲動名單：第 4 名到第 LIST_MAX 名，無限循環 */
+  const rest=arr.slice(3,LIST_MAX);
+  $('crHead').textContent = rest.length ? ('第 4 名 － 第 '+(rest.length+3)+' 名') : '全場僅 '+total+' 人參賽';
+  const rows=rest.map((p,k)=>'<div class="cr"><div class="r">'+(k+4)+'</div>'+
+    '<div class="n">'+p.name+'<span class="t">'+titleFor(p,k+3,total)+'</span></div>'+
+    retHTML(p.ret)+'</div>').join('');
+  const roll=$('crRoll');
+  if(rest.length>=MIN_ROLL_ROWS){
+    roll.innerHTML=rows+rows;   /* 接一份一模一樣的，捲到一半歸零就看不出接縫 */
+    roll.style.animationDuration=(rest.length*ROLL_PER_ROW)+'ms';
+    roll.classList.add('run');
+    $('crView').classList.remove('static');
+  }else{
+    roll.innerHTML=rows;        /* 人數太少就不捲，避免同幾行一直重複 */
+    roll.classList.remove('run');
+    $('crView').classList.add('static');
+  }
+  $('wrap').classList.add('award');
+}
+function exitAward(){
+  clearTimeout(awardTimer); awardWaiting=false;
+  if(!awardOn) return;
+  awardOn=false;
+  $('wrap').classList.remove('award');
+  $('crRoll').classList.remove('run');
+  $('state').textContent = state==='open'?'開盤中':'尚未開盤';
+}
+function confetti(n){
+  const box=$('confetti'), cols=['#ffd166','#ff4d5e','#4da3ff','#c77dff','#ffffff'];
+  let h='';
+  for(let i=0;i<n;i++){
+    h+='<i style="left:'+(Math.random()*100).toFixed(1)+'%;background:'+cols[i%cols.length]+
+       ';animation-duration:'+(4+Math.random()*3).toFixed(1)+'s;animation-delay:'+(-Math.random()*6).toFixed(1)+'s"></i>';
+  }
+  box.innerHTML=h;
+}
+
 /* 最終名次表：收盤 3 秒後寫入 result，玩家手機只讀自己那一筆；資產相同者同名次 */
 function writeFinalRanks(){
   const arr=Object.keys(players).map(k=>({id:k,asset:assetOf(players[k]||{})})).sort((x,y)=>y.asset-x.asset);
