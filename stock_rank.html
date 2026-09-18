@@ -125,6 +125,17 @@
   @keyframes stageIn{0%{transform:scale(1.35);filter:blur(8px);opacity:0}16%{transform:scale(1);filter:blur(0);opacity:1}80%{transform:scale(1.02)}100%{transform:scale(1.06)}}
   @keyframes barSweep{0%{transform:scaleX(0)}32%{transform:scaleX(1)}100%{transform:scaleX(1)}}
   @media (prefers-reduced-motion:reduce){.row.top1::after,.rk.pop .medal,.row .rise.show,#leaderFx.play,#leaderTag.play,#clock.pulse,#cd.beat,#stage.play,#stage.play .st-main,#stage.play .st-bar{animation-duration:.01s}}
+  /* ───── 頒獎轉場：舞台布幕 ───── */
+  #curtain{position:fixed;inset:0;z-index:60;pointer-events:none;display:none}
+  #curtain.play{display:block}
+  #curtain i{position:absolute;left:0;right:0;height:52%;background:linear-gradient(180deg,#0d141d,#070a0f);box-shadow:0 0 60px rgba(0,0,0,.85)}
+  #curtain .t{top:-52%;border-bottom:2px solid rgba(255,209,102,.55)}
+  #curtain .b{bottom:-52%;border-top:2px solid rgba(255,209,102,.55)}
+  #curtain.play .t{animation:curtTop 1.7s cubic-bezier(.45,0,.2,1) both}
+  #curtain.play .b{animation:curtBot 1.7s cubic-bezier(.45,0,.2,1) both}
+  @keyframes curtTop{0%{transform:translateY(0)}30%,58%{transform:translateY(100%)}100%{transform:translateY(0)}}
+  @keyframes curtBot{0%{transform:translateY(0)}30%,58%{transform:translateY(-100%)}100%{transform:translateY(0)}}
+  @media (prefers-reduced-motion:reduce){#curtain.play .t,#curtain.play .b{animation-duration:.01s}}
   /* ───── 頒獎模式 ───── */
   #wrap.award #chartWrap,#wrap.award #legend,#wrap.award #colhead,#wrap.award #board{opacity:0;pointer-events:none;transition:opacity .5s}
   #wrap.award #clock,#wrap.award #cd{display:none}
@@ -188,6 +199,7 @@
   <linearGradient id="mdB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffdcc0"/><stop offset=".45" stop-color="#d99b6a"/><stop offset="1" stop-color="#7d4a26"/></linearGradient>
 </defs></svg>
 <div id="leaderFx"></div>
+<div id="curtain"><i class="t"></i><i class="b"></i></div>
 <div id="stage"><div class="st-sub"></div><div class="st-main"></div><i class="st-bar"></i></div>
 <div id="wrap">
   <div id="head">
@@ -243,7 +255,7 @@ const START_CASH=100000, ROUNDS=5, ROW=64, TOP_BIG=15, WINDOW_SEC=84;
 const TOP_EXACT=(()=>{ const v=parseInt(new URLSearchParams(location.search).get('top'),10); return v>0?v:20; })();
 /* 頒獎模式：捲動名單顯示到第幾名（預設 50，網址加 ?list=80 可調）、等待手機回傳稱號的上限 */
 const LIST_MAX=(()=>{ const v=parseInt(new URLSearchParams(location.search).get('list'),10); return v>0?v:50; })();
-const AWARD_WAIT=8000, ROLL_PER_ROW=900, MIN_ROLL_ROWS=8;
+const AWARD_WAIT=8000, ROLL_PER_ROW=1060, MIN_ROLL_ROWS=8;
 
 let stocks={}, players={}, state='idle', round=1;
 let endAt=0, roundSec=90, warnSec=10, srvOffset=0;
@@ -599,9 +611,19 @@ function retHTML(v){
   const c=v>0.01?'var(--up)':v<-0.01?'var(--down)':'var(--flat)';
   return '<span class="v" style="color:'+c+'">'+(v>0?'+':'')+v.toFixed(1)+'%</span>';
 }
+/* 布幕：合起 → 中途換畫面 → 拉開 */
+function curtain(swap){
+  const c=$('curtain');
+  c.classList.remove('play'); void c.offsetWidth; c.classList.add('play');
+  setTimeout(swap,640);
+  setTimeout(()=>c.classList.remove('play'),1750);
+}
 function enterAward(){
   if(awardOn) return;
   clearTimeout(awardTimer); awardWaiting=false; awardOn=true;
+  curtain(buildAward);
+}
+function buildAward(){
   const arr=awardArr(), total=arr.length;
   $('round').innerHTML='最終結算';
   $('state').textContent='頒獎';
