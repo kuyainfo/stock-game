@@ -76,7 +76,7 @@
   #sum{position:fixed;inset:0;z-index:46;background:rgba(10,14,20,.9);display:none;
        align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity .3s}
   #sum.show{display:flex;opacity:1}
-  #sumBox{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);
+  #sumBox{width:100%;max-width:380px;max-height:100%;overflow-y:auto;background:var(--panel);border:1px solid var(--line);
           border-radius:16px;padding:22px 20px 18px}
   #sumTtl{font-size:12px;letter-spacing:.24em;color:var(--dim);margin-bottom:3px}
   #sumRound{font-size:20px;font-weight:700;margin-bottom:16px}
@@ -115,6 +115,44 @@
   .rrow b{display:block;font-size:15px;margin-bottom:3px}
   .rrow i{font-style:normal;font-size:13px;color:var(--dim);line-height:1.7}
   #rulesBtn{margin-top:12px}
+  /* ───── 情緒演出 ───── */
+  /* 持股卡：未實現損益超過門檻時發光／變暗 */
+  .card.hot{box-shadow:0 0 0 1px rgba(255,209,102,.5),0 0 22px rgba(255,209,102,.2);background:linear-gradient(135deg,rgba(255,209,102,.09),var(--panel) 62%)}
+  .card.hot.sel{background:linear-gradient(135deg,rgba(255,209,102,.12),#182130 62%)}
+  .card.cold{filter:saturate(.4) brightness(.8)}
+  /* 全押：本回合第一次大額全押 */
+  #allin{position:fixed;inset:0;z-index:45;pointer-events:none;opacity:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    box-shadow:inset 0 0 0 3px var(--up),inset 0 0 70px rgba(255,77,94,.55);
+    background:radial-gradient(ellipse at center,rgba(10,14,20,.6),rgba(10,14,20,0) 70%)}
+  #allin b{font-size:58px;font-weight:900;font-style:italic;letter-spacing:.04em;color:#fff;text-shadow:0 0 24px rgba(255,77,94,.9)}
+  #allin span{font-size:14px;color:var(--txt);margin-top:6px;letter-spacing:.08em}
+  #allin.play{animation:allinFade 1.4s ease-out both}
+  #allin.play b{animation:allinPop 1.4s cubic-bezier(.2,1.4,.4,1) both}
+  @keyframes allinFade{0%{opacity:0}8%{opacity:1}70%{opacity:1}100%{opacity:0}}
+  @keyframes allinPop{0%{transform:scale(1.8);opacity:0}18%{transform:scale(1);opacity:1}100%{transform:scale(1.04)}}
+  /* 全押：之後的大額全押，只閃股票卡 */
+  .flashBox{position:fixed;z-index:44;pointer-events:none;border-radius:13px;border:2px solid var(--up);
+    box-shadow:0 0 22px rgba(255,77,94,.6),inset 0 0 18px rgba(255,77,94,.25);animation:cardFlash .7s ease-out both}
+  @keyframes cardFlash{0%{opacity:1}100%{opacity:0}}
+  /* 賣出損益飄字 */
+  #pf{position:fixed;left:0;top:0;z-index:44;pointer-events:none;opacity:0;white-space:nowrap;font-weight:800;
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+  #pf.gain{font-size:26px;color:var(--gold);text-shadow:0 0 14px rgba(255,209,102,.55)}
+  #pf.loss{font-size:15px;color:rgba(0,214,143,.75)}
+  #pf.play{animation:pfRise 1.5s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes pfRise{0%{opacity:0;transform:translate(-100%,10px) scale(.85)}15%{opacity:1;transform:translate(-100%,0) scale(1.08)}
+    30%{opacity:1;transform:translate(-100%,-4px) scale(1)}100%{opacity:0;transform:translate(-100%,-40px) scale(1)}}
+  /* 最終成績：稱號＋名次 */
+  #sumFinal{display:none;text-align:center;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:16px}
+  #sumFinal.on{display:block}
+  #sfTitle{font-size:32px;font-weight:900;letter-spacing:.08em;color:var(--gold);line-height:44px;min-height:44px;text-shadow:0 0 18px rgba(255,209,102,.35)}
+  #sfTitle.wait{font-size:15px;font-weight:500;color:var(--dim);letter-spacing:.12em;text-shadow:none}
+  #sfTitle.pop{animation:titlePop .8s cubic-bezier(.2,1.5,.4,1) both}
+  @keyframes titlePop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+  #sfLine{font-size:13px;color:var(--dim);margin-top:2px;min-height:20px}
+  #sfRank{margin-top:10px;font-size:14px;color:var(--dim);min-height:36px}
+  #sfRank b{font-size:28px;font-weight:800;color:var(--txt);margin:0 5px}
+  @media (prefers-reduced-motion:reduce){#allin.play,#allin.play b,.flashBox,#pf.play,#sfTitle.pop{animation-duration:.01s}}
 </style>
 </head>
 <body>
@@ -188,12 +226,15 @@
 <div id="sum"><div id="sumBox">
   <div id="sumTtl">回合結算</div>
   <div id="sumRound">第 1 回合</div>
+  <div id="sumFinal"><div id="sfTitle"></div><div id="sfLine"></div><div id="sfRank"></div></div>
   <div id="sumPlLbl">本回合損益</div>
   <div><span id="sumPl" class="num">0</span><span id="sumPct" class="num"></span></div>
-  <div id="sumTot">結束時總資產 <b id="sumTotal" class="num">0</b></div>
+  <div id="sumTot">結束時總資產 <b id="sumTotal" class="num">0</b><span id="sumAll"></span></div>
   <div id="sumList"></div>
   <div id="sumFoot">點畫面任一處關閉</div>
 </div></div>
+<div id="allin"><b>ALL IN</b><span></span></div>
+<div id="pf"></div>
 <div id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -218,14 +259,41 @@ const $=id=>document.getElementById(id);
 const START_CASH=100000, ROUNDS=5, HIST=40, IDS=['A','B','C'];
 const COLOR={A:'--a',B:'--b',C:'--c'};
 const MODE_LABEL={stable:'穩健',growth:'成長',spec:'投機'};
-const money=n=>Math.round(n).toLocaleString('en-US');
+const money=n=>(Math.round(n)||0).toLocaleString('en-US');
+
+/* ───────── 可調整參數：演出 ───────── */
+const FX={
+  allInHalf:0.5,     // 全押金額 ≥ 總資產的這個比例才有演出
+  glowPct:10,        // 持股未實現損益 ≥ +10% 發光、≤ -10% 變暗
+  floatMin:1000,     // 賣出損益（合併後）絕對值 ≥ 1,000 才飄字
+  floatMerge:1500,   // 1.5 秒內連續賣出，合併成一次飄字
+  countMs:1200,      // 結算卡損益滾動時間
+  countFinalMs:2000, // 最終回合滾動時間
+  rankWaitMs:20000   // 最終名次等待上限，超過就改顯示「名次請看大螢幕」
+};
+/* ───────── 可調整參數：稱號門檻 ───────── */
+const TITLE={
+  topPct:10,      // 操盤高手：前 10%
+  allIn:10,       // 梭哈戰神：全押 10 次以上
+  trades:100,     // 手速狂人：交易 100 次以上
+  zenTrades:10,   // 佛系存股：交易 10 次以下且報酬為正
+  flatPct:1,      // 平安下莊：報酬在 ±1% 之間
+  bigLossPct:20   // 繳學費的勇者：報酬低於 -20%
+};
+const RANK_TIERS=[10,25,50,75];   // 精確名次以外，顯示「全場前 X%」的區間
+
+/* 個人操作統計（只存在本機，不寫入 Firebase） */
+let stats={trades:0,allIn:0,traded:{},r4:null};
+function saveStats(){ try{ localStorage.setItem('kuya_stock_stats',JSON.stringify(stats)); }catch(e){} }
+function resetStats(){ stats={trades:0,allIn:0,traded:{},r4:null}; saveStats(); }
+try{ const d=JSON.parse(localStorage.getItem('kuya_stock_stats')||'null'); if(d) stats=Object.assign(stats,d); }catch(e){}
 
 let stocks={}, state='idle', round=1, sel=null, prevState='idle';
 let me={name:'',cash:START_CASH,hold:{A:0,B:0,C:0},cost:{A:0,B:0,C:0}};
 let roundStartAsset=START_CASH, myRef=null, ready=false;
 let endAt=0, warnSec=10, srvOffset=0;
 let realized={A:0,B:0,C:0};      // 本回合已實現損益（含已賣出部分）
-let sumTimer=null, lastSumRound=0;
+let sumTimer=null, lastSumRound=0, playRound=0, allInFxRound=0;
 
 db.ref('.info/serverTimeOffset').on('value',s=>{ srvOffset = s.val() || 0; });
 const nowSrv = ()=> Date.now() + srvOffset;
@@ -246,6 +314,7 @@ function loadRoundStart(){
   return false;
 }
 function beginRound(){
+  if(round===1) resetStats();
   roundStartAsset=totalAsset();
   realized={A:0,B:0,C:0};
   saveRoundStart();
@@ -262,6 +331,7 @@ db.ref('.info/connected').on('value',s=>{ $('conn').classList.toggle('show', s.v
 db.ref('market').on('value',snap=>{
   const d=snap.val(); if(!d) return;
   prevState=state; state=d.state||'idle'; round=d.round||1;
+  if(state==='open') playRound=round;
   if(state==='open') skipIntro();
   if(d.stocks){
     IDS.forEach(id=>{
@@ -305,18 +375,17 @@ tickWarn();
 
 /* ───────── 回合結算卡 ───────── */
 function showSummary(){
-  if(lastSumRound===round) return;   // 同一回合只跳一次
-  lastSumRound=round;
+  const endedRound = playRound || (state==='closed' ? Math.max(1,round-1) : round);
+  if(lastSumRound===endedRound) return;   // 同一回合只跳一次
+  lastSumRound=endedRound;
   const total=totalAsset();
   const pl=total-roundStartAsset;
   const pct=roundStartAsset? (pl/roundStartAsset*100) : 0;
   const col=pl>0?'var(--up)':pl<0?'var(--down)':'var(--txt)';
-  const shown = state==='closed' ? Math.max(1,round-1) : round;
+  const shown = endedRound;
 
   $('sumRound').textContent = shown>=ROUNDS ? '第 '+ROUNDS+' 回合（最終）' : '第 '+shown+' 回合';
-  $('sumPl').textContent=(pl>0?'+':'')+money(pl);
   $('sumPl').style.color=col;
-  $('sumPct').textContent=(pl>0?'+':'')+pct.toFixed(2)+'%';
   $('sumPct').style.color=col;
   $('sumTotal').textContent=money(total);
 
@@ -332,11 +401,88 @@ function showSummary(){
   }).join('');
 
   const isFinal = shown>=ROUNDS;
+  if(shown===ROUNDS-1){ stats.r4=total; saveStats(); }
+  $('sumTtl').textContent = isFinal ? '最終成績' : '回合結算';
+  $('sumFinal').classList.toggle('on',isFinal);
+  $('sumAll').innerHTML='';
+  if(isFinal) startFinal(total);
+  countSummary(pl,pct,isFinal?FX.countFinalMs:FX.countMs);
   $('sumFoot').textContent = isFinal ? '請看大螢幕公布名次' : '點畫面任一處關閉';
   $('sum').classList.add('show');
   if(sumTimer) clearTimeout(sumTimer);
   if(!isFinal) sumTimer=setTimeout(hideSummary,6000);
 }
+/* 損益數字從 0 滾動到結果 */
+let countRaf=0;
+function countSummary(pl,pct,ms){
+  cancelAnimationFrame(countRaf);
+  const t0=performance.now();
+  const step=t=>{
+    const p=Math.min(1,(t-t0)/ms), e=1-Math.pow(1-p,3);
+    const v=Math.round(pl*e)||0, q=pct*e;
+    $('sumPl').textContent=(v>0?'+':'')+money(v);
+    $('sumPct').textContent=(pl>0?'+':'')+q.toFixed(2)+'%';
+    if(p<1) countRaf=requestAnimationFrame(step);
+  };
+  countRaf=requestAnimationFrame(step);
+}
+
+/* ───────── 最終成績：稱號＋名次 ───────── */
+function pickTitle(ret,rank,total){
+  const T=TITLE, win=ret>0, n=stats.trades, kinds=Object.keys(stats.traded||{}).length;
+  if(rank===1 && win) return ['當沖之神','今天的市場，是你開的。'];
+  if(rank!=null && total && rank<=Math.ceil(total*T.topPct/100) && win) return ['操盤高手','進出之間，穩穩收割。'];
+  if(stats.r4!=null && stats.r4<START_CASH && win) return ['逆轉勝','跌倒的地方，就是起漲點。'];
+  if(stats.allIn>=T.allIn) return ['梭哈戰神','人生沒有退路，只有全押。'];
+  if(n>=T.trades) return ['手速狂人','手指比行情還快。'];
+  if(n>0 && kinds===1) return ['專情一支','弱水三千，只取一瓢。'];
+  if(n>0 && n<=T.zenTrades && win) return ['佛系存股','不看盤，照樣賺。'];
+  if(n===0) return ['場邊觀眾','今天的行情，你看得最清楚。'];
+  if(ret>T.flatPct) return ['小賺入袋','賺多賺少，賺到就是贏。'];
+  if(ret>=-T.flatPct) return ['平安下莊','十萬進場，十萬出場。'];
+  if(ret>=-T.bigLossPct) return ['小虧當繳稅','繳點稅，才叫參與市場。'];
+  return ['繳學費的勇者','學費繳完，下次換你賺。'];
+}
+function rankHTML(rank,total,topExact){
+  if(rank==null || !total) return '名次請看大螢幕';
+  if(rank<=topExact) return '第<b class="num">'+rank+'</b>名　／　'+total+' 人';
+  const p=rank/total*100, tier=RANK_TIERS.find(x=>p<=x);
+  return tier ? '全場前<b class="num">'+tier+'%</b>　／　'+total+' 人' : '完成全部回合　／　全場 '+total+' 人';
+}
+function showFinal(ret,rank,total,topExact){
+  const t=pickTitle(ret,rank,total), el=$('sfTitle');
+  el.className=''; el.textContent=t[0]; void el.offsetWidth; el.classList.add('pop');
+  $('sfLine').textContent=t[1];
+  $('sfRank').innerHTML=rankHTML(rank,total,topExact);
+}
+let finalMetaRef=null, finalTimer=null;
+function startFinal(total){
+  const ret=(total/START_CASH-1)*100, closeAt=nowSrv();
+  const rc=ret>0?'var(--up)':ret<0?'var(--down)':'var(--txt)';
+  $('sumAll').innerHTML='　｜　整場報酬 <b class="num" style="color:'+rc+'">'+(ret>0?'+':'')+ret.toFixed(2)+'%</b>';
+  const el=$('sfTitle'); el.className='wait'; el.textContent='名次計算中…';
+  $('sfLine').textContent=''; $('sfRank').innerHTML='';
+  if(finalMetaRef) finalMetaRef.off();
+  clearTimeout(finalTimer);
+  let done=false;
+  const end=(rank,meta)=>{
+    if(done) return; done=true;
+    clearTimeout(finalTimer);
+    showFinal(ret,rank,meta?meta.total:0,meta?meta.topExact:0);
+    try{ if(finalMetaRef){ finalMetaRef.off(); finalMetaRef=null; } }catch(e){}
+  };
+  /* 排行榜頁收盤後約 3 秒寫出名次；只採用這次收盤之後寫的資料 */
+  finalMetaRef=db.ref('result/meta');
+  finalMetaRef.on('value',s=>{
+    const m=s.val();
+    if(!m || !(m.at>=closeAt-15000) || done) return;
+    db.ref('result/ranks/'+pid).once('value').then(r=>{
+      const v=r.val(); end(v==null?null:+v, m);
+    }).catch(()=>end(null,null));
+  });
+  finalTimer=setTimeout(()=>end(null,null),FX.rankWaitMs);
+}
+
 function hideSummary(){
   if(sumTimer){ clearTimeout(sumTimer); sumTimer=null; }
   $('sum').classList.remove('show');
@@ -366,24 +512,67 @@ function saveMe(){
 
 /* ───────── 交易 ───────── */
 const tradable=()=> state==='open';
-function buy(s,units){
+function buy(s,units,kind){
   if(!tradable()) return toast('目前不能交易');
   const n=Math.min(units,Math.floor(me.cash/s.price));
   if(n<=0) return toast('現金不足，買不了');
+  const before=totalAsset();
   const cost=n*s.price, h=me.hold[s.id];
   me.cost[s.id]=(me.cost[s.id]*h+cost)/(h+n);
   me.hold[s.id]=h+n; me.cash-=cost;
+  stats.trades++; stats.traded[s.id]=1; if(kind==='ba') stats.allIn++; saveStats();
   toast(`買進 ${s.name} ${n} 單位`); saveMe(); render();
+  /* 全押演出：金額過半才演；本回合第一次大演出，之後只閃股票卡 */
+  if(kind==='ba' && cost>=before*FX.allInHalf){
+    if(allInFxRound!==round){ allInFxRound=round; playAllIn(s,cost); }
+    else flashCard(s.id);
+  }
 }
 function sell(s,units){
   if(!tradable()) return toast('目前不能交易');
   const n=Math.min(units,me.hold[s.id]);
   if(n<=0) return toast('沒有持股可賣');
-  realized[s.id] += (s.price - me.cost[s.id]) * n;
+  const gain=(s.price - me.cost[s.id]) * n;
+  realized[s.id] += gain;
   me.cash+=n*s.price; me.hold[s.id]-=n;
   if(me.hold[s.id]===0) me.cost[s.id]=0;
   saveRoundStart();
+  stats.trades++; stats.traded[s.id]=1; saveStats();
   toast(`賣出 ${s.name} ${n} 單位`); saveMe(); render();
+  floatPL(s.id,gain);
+}
+
+/* ───────── 演出 ───────── */
+function replay(el,cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+function cardEl(id){ return $('cards').querySelector('.card[data-id="'+id+'"]'); }
+function playAllIn(s,cost){
+  const el=$('allin');
+  el.querySelector('span').textContent=s.name+'　全押 '+money(cost);
+  replay(el,'play');
+}
+function flashCard(id){
+  const c=cardEl(id); if(!c) return;
+  const r=c.getBoundingClientRect(), f=document.createElement('div');
+  f.className='flashBox';
+  f.style.cssText='left:'+r.left+'px;top:'+r.top+'px;width:'+r.width+'px;height:'+r.height+'px';
+  document.body.appendChild(f);
+  setTimeout(()=>f.remove(),750);
+}
+let pfAcc=0, pfAt=0;
+function floatPL(id,gain){
+  const t=Date.now();
+  pfAcc=(t-pfAt<FX.floatMerge)?pfAcc+gain:gain; pfAt=t;
+  if(Math.abs(pfAcc)<FX.floatMin) return;
+  const el=$('pf'), c=cardEl(id);
+  let x=window.innerWidth/2+70, y=window.innerHeight-240;
+  if(c){
+    const r=c.getBoundingClientRect();
+    if(r.bottom>0 && r.top<window.innerHeight-200){ x=r.right-14; y=r.top+8; }
+  }
+  el.style.left=x+'px'; el.style.top=y+'px';
+  el.className=pfAcc>0?'gain':'loss';
+  el.textContent=(pfAcc>0?'+':'')+money(pfAcc);
+  replay(el,'play');
 }
 
 let toastTimer=null;
@@ -413,7 +602,7 @@ function render(){
 
   const pill=$('statePill'); pill.className='';
   if(state==='open'){pill.textContent='開盤中';pill.className='open';}
-  else if(state==='closed') pill.textContent='第 '+Math.max(1,round-1)+' 回合結束，等待下一回合';
+  else if(state==='closed') pill.textContent=(playRound>=ROUNDS?'全部回合結束':'第 '+(playRound||Math.max(1,round-1))+' 回合結束，等待下一回合');
   else pill.textContent='尚未開盤';
 
   $('cards').innerHTML=IDS.map(id=>{
@@ -422,7 +611,9 @@ function render(){
     const col=chg>0.001?'var(--up)':chg<-0.001?'var(--down)':'var(--flat)';
     const pl=stockPL(s), plCol=pl>0?'var(--up)':pl<0?'var(--down)':'var(--dim)';
     const mcls=s.mode==='growth'?'m-growth':s.mode==='spec'?'m-spec':'';
-    return `<div class="card${sel===id?' sel':''}" data-id="${id}" style="--k:var(${COLOR[id]})">
+    const upct=(me.hold[id]&&me.cost[id])?(s.price/me.cost[id]-1)*100:0;
+    const tcls=upct>=FX.glowPct?' hot':upct<=-FX.glowPct?' cold':'';
+    return `<div class="card${sel===id?' sel':''}${tcls}" data-id="${id}" style="--k:var(${COLOR[id]})">
       <div class="r1"><div class="nm">${s.name}</div><div class="mode ${mcls}">${MODE_LABEL[s.mode]||''}</div></div>
       <div class="r2">
         <div><span class="px num" style="color:${col}">${s.price.toFixed(1)}</span><span class="chg num" style="color:${col}">${chg>0?'+':''}${chg.toFixed(2)}%</span></div>
@@ -453,7 +644,7 @@ document.querySelectorAll('.tbtn').forEach(b=>{
     const a=b.dataset.act;
     if(a==='b1') buy(s,1);
     else if(a==='b5') buy(s,5);
-    else if(a==='ba') buy(s,Math.floor(me.cash/s.price));
+    else if(a==='ba') buy(s,Math.floor(me.cash/s.price),'ba');
     else if(a==='s1') sell(s,1);
     else if(a==='s5') sell(s,5);
     else if(a==='sa') sell(s,me.hold[s.id]);
@@ -467,7 +658,7 @@ function enter(name){
   myRef.once('value').then(snap=>{
     const d=snap.val();
     if(d){ me.cash=d.cash; me.hold=Object.assign({A:0,B:0,C:0},d.hold||{}); me.cost=Object.assign({A:0,B:0,C:0},d.cost||{}); }
-    else { myRef.set({name,cash:START_CASH,hold:me.hold,cost:me.cost,total:START_CASH,joinedAt:Date.now()}); }
+    else { myRef.set({name,cash:START_CASH,hold:me.hold,cost:me.cost,total:START_CASH,joinedAt:Date.now()}); resetStats(); }
     if(!loadRoundStart()) beginRound();
     ready=true;
     $('entry').style.display='none';

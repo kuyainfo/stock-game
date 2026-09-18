@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>股票大富翁｜行情 × 排行榜</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0a0e14;--panel:#131a24;--line:#212c3b;--txt:#e6edf5;--dim:#7d8ea3;
@@ -13,7 +16,7 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--bg);color:var(--txt);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;height:100vh;overflow:hidden}
-  .num{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+  .num{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
 
   #wrap{height:100vh;display:flex;flex-direction:column;padding:22px 26px 18px}
 
@@ -22,7 +25,7 @@
   #ttl{font-size:15px;letter-spacing:.3em;color:var(--dim)}
   #round{font-size:30px;font-weight:800;white-space:nowrap}
   #round small{font-size:14px;color:var(--dim);font-weight:400;margin-left:4px}
-  #clock{font-size:30px;font-weight:800;letter-spacing:.04em}
+  #clock{font-size:30px;font-weight:700;letter-spacing:.04em;display:inline-block;transform-origin:center}
   #clock.warn{color:var(--gold)}
   #state{font-size:13px;padding:5px 14px;border-radius:999px;border:1px solid var(--line);color:var(--dim);letter-spacing:.1em;white-space:nowrap}
   #state.open{color:var(--up);border-color:rgba(255,77,94,.5);background:rgba(255,77,94,.08)}
@@ -33,15 +36,16 @@
   /* ───── 主體：左圖右榜 ───── */
   #body{flex:1;display:grid;grid-template-columns:2fr 1fr;gap:20px;min-height:0}
 
-  #chartCol{display:flex;flex-direction:column;min-height:0;
-    background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 10px 8px 4px}
+  #chartCol{display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden;
+    background:linear-gradient(180deg,#141c28 0%,#0e141d 100%);border:1px solid var(--line);border-radius:16px;padding:14px 10px 8px 4px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
   #chartWrap{flex:1;position:relative;min-height:0}
   #cv{position:absolute;inset:0;width:100%;height:100%}
   #legend{display:flex;gap:20px;justify-content:center;padding:8px 0 2px;font-size:14px;color:var(--dim);flex-wrap:wrap}
   #legend .lg{display:flex;align-items:center;gap:7px}
   #legend .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
 
-  #rankCol{display:flex;flex-direction:column;min-height:0}
+  #rankCol{display:flex;flex-direction:column;min-height:0;position:relative}
   #colhead{display:grid;grid-template-columns:56px 1fr 96px;padding:0 14px 8px;font-size:11px;letter-spacing:.18em;color:var(--dim)}
   #colhead .r{text-align:right}
 
@@ -57,7 +61,9 @@
     display:grid;grid-template-columns:56px 1fr 96px;align-items:center;padding:0 14px;
     transition:transform .45s cubic-bezier(.22,.8,.28,1),border-color .3s,background .3s;}
   .row .rk{font-size:22px;font-weight:800;color:var(--dim)}
-  .row.top1{border-color:rgba(255,209,102,.55);background:rgba(255,209,102,.07)}
+  .row.top1{border-color:rgba(255,209,102,.6);background:linear-gradient(90deg,rgba(255,209,102,.13),rgba(255,209,102,.04));box-shadow:0 0 26px rgba(255,209,102,.10)}
+  .row.top2{border-color:rgba(201,212,224,.28)}
+  .row.top3{border-color:rgba(217,155,106,.28)}
   .row.top1 .rk{color:var(--gold)}
   .row.top2 .rk{color:var(--silver)}
   .row.top3 .rk{color:var(--bronze)}
@@ -70,9 +76,65 @@
   .row.minor .rt{font-size:16px}
 
   #empty{padding:50px 14px;text-align:center;color:var(--dim);font-size:14px;line-height:2}
+  /* ───── 視覺強化 ───── */
+  /* 前三名獎牌 */
+  .row .rk{display:flex;align-items:center}
+  .medal{width:34px;height:38px;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45))}
+  .row.minor .medal{width:26px;height:29px}
+  .rk.pop .medal{animation:medalPop .9s cubic-bezier(.3,1.6,.5,1) both}
+  @keyframes medalPop{0%{transform:scale(.3) rotate(-25deg)}100%{transform:scale(1) rotate(0)}}
+  /* 第一名光澤掃過 */
+  .row.top1::after{content:"";position:absolute;inset:0;border-radius:12px;pointer-events:none;
+    background:linear-gradient(105deg,transparent 38%,rgba(255,228,160,.18) 50%,transparent 62%);
+    background-size:260% 100%;animation:sheen 3.8s ease-in-out infinite}
+  @keyframes sheen{0%{background-position:130% 0}55%,100%{background-position:-30% 0}}
+  /* 名次上升提示 */
+  .row .rise{position:absolute;right:118px;top:50%;font-size:13px;font-weight:700;color:var(--up);
+    background:#2a161c;border:1px solid rgba(255,77,94,.45);padding:1px 8px;border-radius:999px;
+    transform:translateY(-50%);opacity:0;pointer-events:none;white-space:nowrap}
+  .row .rise.show{animation:riseChip 2.4s ease both}
+  @keyframes riseChip{0%{opacity:0;transform:translateY(-10%)}12%{opacity:1;transform:translateY(-50%)}75%{opacity:1;transform:translateY(-50%)}100%{opacity:0;transform:translateY(-85%)}}
+  /* 榜首易主 */
+  #leaderFx{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:40;
+    background:radial-gradient(ellipse 55% 75% at 84% 32%,rgba(255,209,102,.30),rgba(255,209,102,0) 70%)}
+  #leaderFx.play{animation:goldFlash 1.6s ease-out both}
+  @keyframes goldFlash{0%{opacity:0}14%{opacity:1}100%{opacity:0}}
+  #leaderTag{position:absolute;left:50%;top:-6px;z-index:5;pointer-events:none;white-space:nowrap;
+    background:linear-gradient(180deg,#ffe6a6,#e2b24c);color:#231a05;font-weight:800;font-size:16px;letter-spacing:.06em;
+    padding:7px 20px;border-radius:999px;box-shadow:0 6px 26px rgba(255,209,102,.38);opacity:0;transform:translate(-50%,-140%)}
+  #leaderTag.play{animation:tagDrop 2.6s cubic-bezier(.2,.9,.2,1) both}
+  @keyframes tagDrop{0%{opacity:0;transform:translate(-50%,-140%)}14%{opacity:1;transform:translate(-50%,0)}80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-40%)}}
+  /* 最後倒數 */
+  #clock.pulse{animation:clockBeat .9s cubic-bezier(.2,.8,.2,1)}
+  @keyframes clockBeat{0%{transform:scale(1.35)}100%{transform:scale(1)}}
+  #cd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:700;font-size:min(50vh,24vw);line-height:1;color:var(--gold);opacity:0}
+  #cd.hot{color:var(--up)}
+  #cd.beat{animation:cdBeat 1s ease-out both}
+  @keyframes cdBeat{0%{opacity:.34;transform:scale(1.18)}100%{opacity:.07;transform:scale(1)}}
+  /* 開盤／收盤字卡 */
+  #stage{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;opacity:0;
+    background:radial-gradient(ellipse at center,rgba(10,14,20,.86) 0%,rgba(10,14,20,.6) 45%,rgba(10,14,20,.15) 85%)}
+  #stage .st-sub{font-size:clamp(18px,2.2vw,30px);color:var(--dim);letter-spacing:.3em;margin-bottom:6px}
+  #stage .st-main{font-size:clamp(72px,11vw,168px);font-weight:900;letter-spacing:.14em;line-height:1.1;color:var(--txt)}
+  #stage .st-bar{display:block;height:5px;width:min(560px,50%);margin-top:20px;border-radius:3px;background:var(--k);box-shadow:0 0 22px var(--k);transform:scaleX(0)}
+  #stage.play{animation:stageFade 2.4s ease both}
+  #stage.play .st-main{animation:stageIn 2.4s cubic-bezier(.2,.8,.2,1) both}
+  #stage.play .st-bar{animation:barSweep 2.4s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes stageFade{0%{opacity:0}10%{opacity:1}80%{opacity:1}100%{opacity:0}}
+  @keyframes stageIn{0%{transform:scale(1.35);filter:blur(8px);opacity:0}16%{transform:scale(1);filter:blur(0);opacity:1}80%{transform:scale(1.02)}100%{transform:scale(1.06)}}
+  @keyframes barSweep{0%{transform:scaleX(0)}32%{transform:scaleX(1)}100%{transform:scaleX(1)}}
+  @media (prefers-reduced-motion:reduce){.row.top1::after,.rk.pop .medal,.row .rise.show,#leaderFx.play,#leaderTag.play,#clock.pulse,#cd.beat,#stage.play,#stage.play .st-main,#stage.play .st-bar{animation-duration:.01s}}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="mdG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset=".45" stop-color="#ffd166"/><stop offset="1" stop-color="#a8781f"/></linearGradient>
+  <linearGradient id="mdS" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#c9d4e0"/><stop offset="1" stop-color="#6f7c8b"/></linearGradient>
+  <linearGradient id="mdB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffdcc0"/><stop offset=".45" stop-color="#d99b6a"/><stop offset="1" stop-color="#7d4a26"/></linearGradient>
+</defs></svg>
+<div id="leaderFx"></div>
+<div id="stage"><div class="st-sub"></div><div class="st-main"></div><i class="st-bar"></i></div>
 <div id="wrap">
   <div id="head">
     <div id="ttl">股票大富翁</div>
@@ -84,11 +146,12 @@
 
   <div id="body">
     <div id="chartCol">
-      <div id="chartWrap"><canvas id="cv"></canvas></div>
+      <div id="chartWrap"><canvas id="cv"></canvas><div id="cd"></div></div>
       <div id="legend"></div>
     </div>
 
     <div id="rankCol">
+      <div id="leaderTag"></div>
       <div id="colhead"><div>名次</div><div>玩家</div><div class="r">投報率</div></div>
       <div id="board">
         <div id="list"></div>
@@ -119,11 +182,16 @@ const db=firebase.database();
 const $=id=>document.getElementById(id);
 const IDS=['A','B','C'], VAR={A:'--a',B:'--b',C:'--c'};
 const START_CASH=100000, ROUNDS=5, ROW=64, TOP_BIG=15, WINDOW_SEC=84;
+/* 最終結算：前幾名在玩家手機顯示精確名次，其餘顯示區間。
+   預設 20；網址加 ?top=30 可改成前 30 名（例：stock_rank.html?top=30） */
+const TOP_EXACT=(()=>{ const v=parseInt(new URLSearchParams(location.search).get('top'),10); return v>0?v:20; })();
 
 let stocks={}, players={}, state='idle', round=1;
 let endAt=0, roundSec=90, warnSec=10, srvOffset=0;
 /* 各股自行累積的歷史點：{A:[{t,p}], ...}，t 為本機 performance.now() */
 let hist={A:[],B:[],C:[]}, lastRoundKey='';
+let flashT={A:0,B:0,C:0}, mReady=false, prevState=null, prevRound=1;
+let crossSign={}, crossAt={}, crossFx=[], lastPct={};
 
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
@@ -133,19 +201,30 @@ db.ref('.info/serverTimeOffset').on('value',s=>{ srvOffset=s.val()||0; });
 db.ref('market').on('value',snap=>{
   const d=snap.val(); if(!d) return;
   state=d.state||'idle'; round=d.round||1;
+  if(mReady && prevState!==state){
+    if(state==='open') playStage('第 '+round+' 回合','開盤','--up');
+    else if(state==='closed' && prevState==='open'){
+      playStage(prevRound>=ROUNDS?'最終回合':'第 '+prevRound+' 回合','收盤','--gold');
+      if(prevRound>=ROUNDS) setTimeout(writeFinalRanks,3000);   // 等最後幾筆成交寫完再算
+    }
+  }
+  prevState=state; prevRound=round; mReady=true;
   endAt=d.endAt||0; roundSec=d.roundSec||90; warnSec=d.warnSec||10;
   stocks=d.stocks||{};
 
   /* 換回合 or 重新開盤 → 清空歷史，讓每回合是獨立一張圖 */
   const rk=round+'|'+(d.stocks&&d.stocks.A?d.stocks.A.open:0);
-  if(rk!==lastRoundKey){ hist={A:[],B:[],C:[]}; lastRoundKey=rk; }
+  if(rk!==lastRoundKey){ hist={A:[],B:[],C:[]}; lastRoundKey=rk; crossSign={}; crossFx=[]; lastPct={}; }
 
   /* 累積當下價格 */
   const now=performance.now();
   IDS.forEach(id=>{
     const s=stocks[id]; if(!s) return;
     const arr=hist[id];
-    if(!arr.length || arr[arr.length-1].p!==+s.price) arr.push({t:now,p:+s.price});
+    if(!arr.length || arr[arr.length-1].p!==+s.price){
+      if(arr.length) flashT[id]=now;
+      arr.push({t:now,p:+s.price});
+    }
     /* 只保留視窗內＋少量緩衝，避免無限增長 */
     const cut=now-(WINDOW_SEC+5)*1000;
     while(arr.length>2 && arr[0].t<cut) arr.shift();
@@ -166,13 +245,26 @@ function renderHead(){
   else if(state==='closed') st.textContent='已關盤';
   else st.textContent='尚未開盤';
 }
+let cdLast=-1;
 function tickClock(){
   const c=$('clock');
-  if(state!=='open' && state!=='closing'){ c.textContent='--:--'; c.classList.remove('warn'); return; }
+  if(state!=='open' && state!=='closing'){
+    c.textContent='--:--'; c.classList.remove('warn');
+    if(cdLast!==-1){ cdLast=-1; $('cd').classList.remove('beat'); }
+    return;
+  }
   const left=Math.max(0,Math.round((endAt-(Date.now()+srvOffset))/1000));
   const m=String(Math.floor(left/60)).padStart(2,'0'), s=String(left%60).padStart(2,'0');
   c.textContent=m+':'+s;
   c.classList.toggle('warn', left<=warnSec);
+  if(left!==cdLast){
+    cdLast=left;
+    const cd=$('cd');
+    if(left>0 && left<=warnSec){
+      cd.textContent=left; cd.classList.toggle('hot',left<=3);
+      replay(cd,'beat'); replay(c,'pulse');
+    }else{ cd.classList.remove('beat'); }
+  }
 }
 setInterval(tickClock,250);
 
@@ -194,49 +286,192 @@ function resize(){
 }
 window.addEventListener('resize',resize); resize();
 
+/* ───────── 視覺：趨勢線繪製（填色 → 發光線 → 線頭 → 價格標籤） ───────── */
+const MONO='"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+const SANS='"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif';
+function hexA(hex,a){
+  let h=String(hex).replace('#','').trim();
+  if(h.length===3) h=h.split('').map(c=>c+c).join('');
+  const n=parseInt(h,16);
+  if(!isFinite(n)) return hex;
+  return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')';
+}
+function pill(x,y,txt,col,size){
+  ctx.font='600 '+size+'px '+MONO;
+  const tw=ctx.measureText(txt).width, bw=tw+14, bh=size+9, r=5, bx=x, by=y-bh/2;
+  ctx.fillStyle=col;
+  ctx.beginPath();
+  ctx.moveTo(bx+r,by); ctx.lineTo(bx+bw-r,by); ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+r);
+  ctx.lineTo(bx+bw,by+bh-r); ctx.quadraticCurveTo(bx+bw,by+bh,bx+bw-r,by+bh);
+  ctx.lineTo(bx+r,by+bh); ctx.quadraticCurveTo(bx,by+bh,bx,by+bh-r);
+  ctx.lineTo(bx,by+r); ctx.quadraticCurveTo(bx,by,bx+r,by);
+  ctx.fill();
+  ctx.fillStyle='#0a0e14'; ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillText(txt,bx+7,y+.5);
+}
+/* series: [{idx,col,xy:[{x,y}],ex,ey,price,flash}] */
+function paintSeries(series,now,bottom,labelX,top,maxY,size,base){
+  /* 1. 線與基準線（0%）之間的漸層，離 0% 越遠越濃 */
+  series.forEach(o=>{
+    const g=ctx.createLinearGradient(0,top,0,bottom);
+    const f=Math.min(1,Math.max(0,(base-top)/(bottom-top)));
+    g.addColorStop(0,hexA(o.col,.15)); g.addColorStop(f,hexA(o.col,0)); g.addColorStop(1,hexA(o.col,.15));
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    o.xy.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+    ctx.lineTo(o.ex,base); ctx.lineTo(o.xy[0].x,base); ctx.closePath(); ctx.fill();
+  });
+  /* 2. 發光線 */
+  series.forEach(o=>{
+    ctx.save();
+    ctx.strokeStyle=o.col; ctx.lineWidth=2.4; ctx.lineJoin='round'; ctx.lineCap='round';
+    ctx.shadowColor=hexA(o.col,.7); ctx.shadowBlur=12;
+    ctx.beginPath();
+    o.xy.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+    ctx.stroke();
+    ctx.restore();
+  });
+  /* 3. 線頭：常態呼吸光暈＋每次跳動擴散一圈 */
+  series.forEach(o=>{
+    const br=.5+.5*Math.sin(now/450+o.idx*2.1);
+    ctx.fillStyle=o.col;
+    ctx.globalAlpha=.10+.12*br;
+    ctx.beginPath(); ctx.arc(o.ex,o.ey,9+4*br,0,7); ctx.fill();
+    const p=(now-o.flash)/700;
+    if(p>=0&&p<1){
+      ctx.globalAlpha=(1-p)*.6; ctx.strokeStyle=o.col; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(o.ex,o.ey,5+18*p,0,7); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+    ctx.beginPath(); ctx.arc(o.ex,o.ey,4,0,7); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.globalAlpha=.85;
+    ctx.beginPath(); ctx.arc(o.ex,o.ey,1.5,0,7); ctx.fill();
+    ctx.globalAlpha=1;
+  });
+  /* 4. 右側價格標籤：三支價位太近時上下錯開，並拉一條引線 */
+  const gap=size+12;
+  const lb=series.map(o=>({o,y:o.ey})).sort((a,b)=>a.y-b.y);
+  for(let i=0;i<lb.length;i++){
+    lb[i].y=Math.max(lb[i].y, top+gap/2, i?lb[i-1].y+gap:-Infinity);
+  }
+  for(let i=lb.length-1;i>=0;i--){
+    const lim=(i===lb.length-1)?maxY-gap/2:lb[i+1].y-gap;
+    if(lb[i].y>lim) lb[i].y=lim;
+  }
+  lb.forEach(l=>{
+    if(Math.abs(l.y-l.o.ey)>1.5){
+      ctx.strokeStyle=hexA(l.o.col,.55); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(l.o.ex+6,l.o.ey); ctx.lineTo(labelX-2,l.y); ctx.stroke();
+    }
+    pill(labelX,l.y,l.o.price.toFixed(1),l.o.col,size);
+  });
+}
+/* 重新觸發 CSS 動畫 */
+function replay(el,cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+
+function playStage(sub,main,k){
+  const el=$('stage');
+  el.querySelector('.st-sub').textContent=sub;
+  el.querySelector('.st-main').textContent=main;
+  el.style.setProperty('--k','var('+k+')');
+  replay(el,'play');
+}
+
 function draw(){
   const w=cv.clientWidth,h=cv.clientHeight;
   ctx.clearRect(0,0,w,h);
-  const has=IDS.some(id=>hist[id]&&hist[id].length);
+  const has=IDS.some(id=>hist[id]&&hist[id].length&&stocks[id]);
   if(!has){ requestAnimationFrame(draw); return; }
 
-  const padL=60,padR=86,padT=16,padB=20;
-  const iw=w-padL-padR, ih=h-padT-padB;
+  const padL=64,padR=90,padT=16,padB=20;
+  const iw=w-padL-padR, ih=h-padT-padB, bottom=padT+ih;
   const now=performance.now(), t1=now, t0=now-WINDOW_SEC*1000;
+  const openOf=id=>(stocks[id]&&+stocks[id].open)||1;
+  const pctOf=(id,p)=>(p/openOf(id)-1)*100;
 
+  /* Y 軸：漲跌幅 %，以 0% 為中心上下對稱，最少 ±3% */
   let lo=Infinity,hi=-Infinity;
-  IDS.forEach(id=>hist[id].forEach(pt=>{ if(pt.t>=t0){ lo=Math.min(lo,pt.p); hi=Math.max(hi,pt.p); } }));
-  if(!isFinite(lo)){ lo=0; hi=1; }
-  const pad=(hi-lo)*0.12||hi*0.05||1;
-  const ymin=lo-pad, ymax=hi+pad;
+  IDS.forEach(id=>hist[id].forEach(pt=>{ if(pt.t>=t0){ const v=pctOf(id,pt.p); lo=Math.min(lo,v); hi=Math.max(hi,v); } }));
+  if(!isFinite(lo)){ lo=-1; hi=1; }
+  const span=Math.max(3,Math.max(Math.abs(lo),Math.abs(hi))*1.2);
+  const ymin=-span, ymax=span;
   const toX=t=>padL+iw*Math.min(1,Math.max(0,(t-t0)/(t1-t0)));
-  const toY=p=>padT+ih*(1-(p-ymin)/(ymax-ymin));
+  const toY=v=>padT+ih*(1-(v-ymin)/(ymax-ymin));
+  const zeroY=toY(0);
 
-  /* 格線 + Y 軸刻度 */
-  ctx.font='11px ui-monospace,monospace'; ctx.textAlign='right'; ctx.textBaseline='middle';
-  for(let i=0;i<=6;i++){
-    const y=padT+ih*i/6, val=ymax-(ymax-ymin)*i/6;
-    ctx.strokeStyle='#19212d'; ctx.lineWidth=1;
+  /* 0% 以上淡紅、以下淡綠 */
+  let g=ctx.createLinearGradient(0,padT,0,zeroY);
+  g.addColorStop(0,'rgba(255,77,94,0)'); g.addColorStop(1,'rgba(255,77,94,.10)');
+  ctx.fillStyle=g; ctx.fillRect(padL,padT,iw,zeroY-padT);
+  g=ctx.createLinearGradient(0,zeroY,0,bottom);
+  g.addColorStop(0,'rgba(0,214,143,.055)'); g.addColorStop(1,'rgba(0,214,143,0)');
+  ctx.fillStyle=g; ctx.fillRect(padL,zeroY,iw,bottom-zeroY);
+
+  /* 時間格線：每 10 秒一條，跟著行情往左捲 */
+  ctx.lineWidth=1; ctx.strokeStyle='rgba(255,255,255,.035)';
+  for(let t=Math.ceil(t0/10000)*10000;t<=t1;t+=10000){
+    const x=Math.round(toX(t))+.5;
+    ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,bottom); ctx.stroke();
+  }
+  /* 格線＋刻度；0% 基準線加亮 */
+  ctx.font='11px '+MONO; ctx.textAlign='right'; ctx.textBaseline='middle';
+  for(let i=0;i<=8;i++){
+    const y=padT+ih*i/8, val=ymax-(ymax-ymin)*i/8;
+    const zero=Math.abs(val)<0.001;
+    ctx.strokeStyle=zero?'rgba(230,237,245,.38)':'#18202b'; ctx.lineWidth=zero?1.5:1;
     ctx.beginPath(); ctx.moveTo(padL,y+.5); ctx.lineTo(w-padR,y+.5); ctx.stroke();
-    ctx.fillStyle='#5d6d82'; ctx.fillText(val.toFixed(0),padL-10,y);
+    ctx.fillStyle=zero?'#c3cfdc':'#5d6d82';
+    ctx.fillText(zero?'0%':(val>0?'+':'')+val.toFixed(1)+'%',padL-10,y);
   }
 
-  IDS.forEach(id=>{
+  const series=[], heads={};
+  IDS.forEach((id,idx)=>{
     const arr=hist[id]; if(!arr||!arr.length) return;
     const pts=arr.filter(pt=>pt.t>=t0-3000);
     if(!pts.length) return;
-    const col=css(VAR[id]);
-    ctx.strokeStyle=col; ctx.lineWidth=2.4; ctx.lineJoin='round'; ctx.lineCap='round';
-    ctx.beginPath();
-    pts.forEach((pt,i)=>{const x=toX(pt.t),y=toY(pt.p); i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
-    const last=pts[pts.length-1];
-    ctx.lineTo(toX(now),toY(last.p)); ctx.stroke();
-    const ex=Math.min(toX(now),w-padR), ey=toY(last.p);
-    ctx.fillStyle=col;
-    ctx.beginPath(); ctx.arc(ex,ey,4,0,7); ctx.fill();
-    ctx.globalAlpha=.18; ctx.beginPath(); ctx.arc(ex,ey,10,0,7); ctx.fill(); ctx.globalAlpha=1;
-    ctx.textAlign='left'; ctx.font='bold 13px ui-monospace,monospace';
-    ctx.fillText(last.p.toFixed(1),ex+12,ey);
+    const last=pts[pts.length-1], pct=pctOf(id,last.p);
+    const xy=pts.map(pt=>({x:toX(pt.t),y:toY(pctOf(id,pt.p))}));
+    const ex=Math.min(toX(now),w-padR), ey=toY(pct);
+    xy.push({x:ex,y:ey});
+    const o={id,idx,col:css(VAR[id]),xy,ex,ey,pct,price:last.p,flash:flashT[id]||0};
+    series.push(o); heads[id]=o;
+  });
+
+  /* 超車偵測：兩支股票漲跌幅高低互換的瞬間；同一組 3 秒內只閃一次 */
+  if(state==='open'){
+    [['A','B'],['A','C'],['B','C']].forEach(([x,y])=>{
+      const ox=heads[x], oy=heads[y]; if(!ox||!oy) return;
+      const d=ox.pct-oy.pct, sg=d>0?1:d<0?-1:0;
+      if(!sg) return;
+      const key=x+y, prev=crossSign[key];
+      crossSign[key]=sg;
+      if(prev && prev!==sg && now-(crossAt[key]||0)>3000 && lastPct[x]!=null && lastPct[y]!=null){
+        /* 以前一幀與這一幀的數值推算交叉點高度 */
+        const d0=lastPct[x]-lastPct[y], r=d0===d?1:d0/(d0-d);
+        const v=lastPct[x]+(ox.pct-lastPct[x])*Math.min(1,Math.max(0,r));
+        crossAt[key]=now;
+        crossFx.push({t:now,v,ca:ox.col,cb:oy.col});
+      }
+    });
+  }
+  IDS.forEach(id=>{ if(heads[id]) lastPct[id]=heads[id].pct; });
+
+  paintSeries(series,now,bottom,w-padR+10,padT,h-padB,13,zeroY);
+
+  /* 超車光圈：兩支股票的顏色各一圈，隨時間軸往左捲 */
+  crossFx=crossFx.filter(f=>now-f.t<900);
+  crossFx.forEach(f=>{
+    const p=(now-f.t)/900, e=1-Math.pow(1-p,3);
+    const x=Math.min(toX(f.t),w-padR), y=toY(f.v);
+    ctx.save();
+    ctx.globalAlpha=(1-p)*.95; ctx.lineWidth=1+3*(1-p); ctx.shadowBlur=16;
+    ctx.strokeStyle=f.ca; ctx.shadowColor=f.ca;
+    ctx.beginPath(); ctx.arc(x,y,6+28*e,0,7); ctx.stroke();
+    ctx.strokeStyle=f.cb; ctx.shadowColor=f.cb;
+    ctx.beginPath(); ctx.arc(x,y,4+17*e,0,7); ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.shadowColor='#fff'; ctx.globalAlpha=1-p;
+    ctx.beginPath(); ctx.arc(x,y,1.5+3*(1-p),0,7); ctx.fill();
+    ctx.restore();
   });
   requestAnimationFrame(draw);
 }
@@ -247,6 +482,32 @@ function assetOf(p){
   let v=p.cash||0;
   IDS.forEach(id=>{ const h=(p.hold&&p.hold[id])||0; if(h && stocks[id]) v+=h*stocks[id].price; });
   return v;
+}
+function medalSVG(n){
+  const g=n===1?'mdG':n===2?'mdS':'mdB';
+  return '<svg class="medal" viewBox="0 0 36 40" aria-label="第'+n+'名">'
+    +'<path d="M9 0h8l4 13h-8z" fill="url(#'+g+')" opacity=".55"/>'
+    +'<path d="M27 0h-8l-4 13h8z" fill="url(#'+g+')" opacity=".8"/>'
+    +'<circle cx="18" cy="25" r="14" fill="url(#'+g+')"/>'
+    +'<circle cx="18" cy="25" r="10.5" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1"/>'
+    +'<text x="18" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#241a08" font-family="IBM Plex Mono,monospace">'+n+'</text>'
+    +'</svg>';
+}
+let prevRank={}, leaderId=null, leaderFxAt=0, boardReady=false;
+function playLeader(name,id){
+  $('leaderTag').textContent='新榜首　'+name;
+  replay($('leaderTag'),'play');
+  replay($('leaderFx'),'play');
+  const row=$('list').querySelector('[data-id="'+id+'"]');
+  if(row) replay(row.querySelector('.rk'),'pop');
+}
+/* 最終名次表：收盤 3 秒後寫入 result，玩家手機只讀自己那一筆；資產相同者同名次 */
+function writeFinalRanks(){
+  const arr=Object.keys(players).map(k=>({id:k,asset:assetOf(players[k]||{})})).sort((x,y)=>y.asset-x.asset);
+  const ranks={}; let rank=0;
+  arr.forEach((p,i)=>{ if(i===0 || p.asset<arr[i-1].asset-0.005) rank=i+1; ranks[p.id]=rank; });
+  db.ref('result').set({meta:{at:Date.now()+srvOffset,total:arr.length,topExact:TOP_EXACT},ranks})
+    .catch(e=>console.error('最終名次寫入失敗',e));
 }
 function renderBoard(){
   const arr=Object.keys(players).map(k=>{
@@ -264,19 +525,25 @@ function renderBoard(){
   arr.forEach((p,i)=>{ ys.push(acc); acc += (i<TOP_BIG?ROW:MINOR); });
   $('list').style.height=acc+'px';
 
-  const list=$('list'), seen={};
+  const list=$('list'), seen={}, nextRank={};
   arr.forEach((p,i)=>{
     let el=list.querySelector('[data-id="'+p.id+'"]');
     if(!el){
       el=document.createElement('div');
       el.className='row'; el.dataset.id=p.id;
       el.style.transform='translateY('+ys[i]+'px)';
-      el.innerHTML='<div class="rk num"></div><div class="nm"></div><div class="rt num"></div>';
+      el.innerHTML='<div class="rk num"></div><div class="nm"></div><div class="rt num"></div><span class="rise num"></span>';
       list.appendChild(el);
     }
     el.style.transform='translateY('+ys[i]+'px)';
     el.className='row'+(i===0?' top1':i===1?' top2':i===2?' top3':'')+(i>=TOP_BIG?' minor':'');
-    el.querySelector('.rk').textContent=i+1;
+    const rkEl=el.querySelector('.rk'), rkKey=(i<3?'m':'')+(i+1);
+    if(rkEl.dataset.k!==rkKey){ rkEl.dataset.k=rkKey; rkEl.innerHTML=i<3?medalSVG(i+1):String(i+1); }
+    const pr=prevRank[p.id];
+    if(boardReady && state!=='idle' && pr!=null && i<pr && i<TOP_BIG){
+      const ch=el.querySelector('.rise'); ch.textContent='▲'+(pr-i); replay(ch,'show');
+    }
+    nextRank[p.id]=i;
     el.querySelector('.nm').textContent=p.name;
     const rt=el.querySelector('.rt');
     rt.textContent=(p.ret>0?'+':'')+p.ret.toFixed(1)+'%';
@@ -284,6 +551,18 @@ function renderBoard(){
     seen[p.id]=1;
   });
   list.querySelectorAll('.row').forEach(el=>{ if(!seen[el.dataset.id]) el.remove(); });
+
+  /* 榜首易主：新榜首資產需嚴格高於前榜首，且 4 秒內不重複觸發 */
+  if(arr.length){
+    const top=arr[0];
+    if(boardReady && leaderId && top.id!==leaderId && state!=='idle' && arr.length>1){
+      const old=arr.find(x=>x.id===leaderId);
+      const t=performance.now();
+      if(old && top.asset>old.asset+0.01 && t-leaderFxAt>4000){ leaderFxAt=t; playLeader(top.name,top.id); }
+    }
+    leaderId=top.id;
+  }else{ leaderId=null; }
+  prevRank=nextRank; boardReady=true;
 }
 
 /* 股價持續跳動，排行榜每 500ms 重算一次 */
