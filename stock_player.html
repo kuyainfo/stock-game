@@ -86,11 +86,14 @@
   #sumTot{font-size:13px;color:var(--dim);margin-top:6px}
   #sumTot b{color:var(--txt);font-weight:600}
   #sumList{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
-  .sr{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0}
+  .sr{display:block;padding:7px 0}
+  .sr .top{display:flex;justify-content:space-between;align-items:center;font-size:13px}
   .sr .l{display:flex;align-items:center;gap:8px;color:var(--dim)}
   .sr .l i{width:3px;height:14px;border-radius:2px;display:block}
   .sr .r{font-family:ui-monospace,monospace;font-weight:600}
   .sr .h{font-size:11px;color:var(--dim);font-weight:400;margin-right:8px}
+  .sr .bar{height:6px;border-radius:3px;background:#1b2430;margin-top:6px;display:flex}
+  .sr .bar i{display:block;height:100%;border-radius:3px;min-width:3px}
   #sumFoot{margin-top:14px;font-size:11px;color:var(--dim);text-align:center;letter-spacing:.08em}
   #conn{position:fixed;top:8px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--gold);background:rgba(10,14,20,.95);border:1px solid rgba(255,209,102,.4);padding:4px 12px;border-radius:999px;z-index:30;display:none}
   #conn.show{display:block}
@@ -143,15 +146,48 @@
   @keyframes pfRise{0%{opacity:0;transform:translate(-100%,10px) scale(.85)}15%{opacity:1;transform:translate(-100%,0) scale(1.08)}
     30%{opacity:1;transform:translate(-100%,-4px) scale(1)}100%{opacity:0;transform:translate(-100%,-40px) scale(1)}}
   /* 最終成績：稱號＋名次 */
-  #sumFinal{display:none;text-align:center;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:16px}
+  /* ───── 最終成績：稱號卡牌 ───── */
+  #sumFinal{display:none}
   #sumFinal.on{display:block}
-  #sfTitle{font-size:32px;font-weight:900;letter-spacing:.08em;color:var(--gold);line-height:44px;min-height:44px;text-shadow:0 0 18px rgba(255,209,102,.35)}
-  #sfTitle.wait{font-size:15px;font-weight:500;color:var(--dim);letter-spacing:.12em;text-shadow:none}
+  #sfCard{position:relative;overflow:hidden;text-align:center;border-radius:16px;padding:20px 16px 16px;
+    border:1px solid var(--tc);background:
+      repeating-linear-gradient(115deg,rgba(255,255,255,.028) 0 2px,transparent 2px 9px),
+      radial-gradient(120% 90% at 50% 0%,var(--tg) 0%,rgba(19,26,36,0) 72%),#121a25;
+    box-shadow:0 0 26px var(--tglow),inset 0 1px 0 rgba(255,255,255,.07)}
+  #sfCard.gold{--tc:rgba(255,209,102,.62);--tg:rgba(255,209,102,.20);--tglow:rgba(255,209,102,.16);
+    --t1:#fff6d5;--t2:#ffd166;--t3:#c08a20}
+  #sfCard.silver{--tc:rgba(167,199,232,.62);--tg:rgba(167,199,232,.24);--tglow:rgba(167,199,232,.14);
+    --t1:#ffffff;--t2:#c9d4e0;--t3:#78889a}
+  #sfCard.dark{--tc:rgba(125,142,163,.42);--tg:rgba(125,142,163,.13);--tglow:rgba(0,0,0,0);
+    --t1:#d6e0ec;--t2:#93a5b9;--t3:#5d6d82}
+  /* 四角框線 */
+  #sfCard::before,#sfCard::after{content:"";position:absolute;width:16px;height:16px;border:2px solid var(--tc);opacity:.85}
+  #sfCard::before{left:8px;top:8px;border-right:0;border-bottom:0;border-radius:6px 0 0 0}
+  #sfCard::after{right:8px;bottom:8px;border-left:0;border-top:0;border-radius:0 0 6px 0}
+  #sfCard .sheen{position:absolute;top:-60%;left:-40%;width:28%;height:220%;pointer-events:none;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);transform:rotate(18deg);
+    animation:sfSheen 4.5s ease-in-out infinite}
+  @keyframes sfSheen{0%{left:-40%}55%,100%{left:130%}}
+  #sfTitle{font-size:34px;font-weight:900;letter-spacing:.1em;line-height:46px;min-height:46px;
+    background-image:linear-gradient(180deg,var(--t1) 0%,var(--t2) 52%,var(--t3) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+  #sfTitle.wait{font-size:15px;font-weight:500;letter-spacing:.12em;background-image:none;color:var(--dim);
+    -webkit-text-fill-color:var(--dim);filter:none}
   #sfTitle.pop{animation:titlePop .8s cubic-bezier(.2,1.5,.4,1) both}
   @keyframes titlePop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
-  #sfLine{font-size:13px;color:var(--dim);margin-top:2px;min-height:20px}
-  #sfRank{margin-top:10px;font-size:14px;color:var(--dim);min-height:36px}
-  #sfRank b{font-size:28px;font-weight:800;color:var(--txt);margin:0 5px}
+  #sfLine{font-size:13px;color:var(--dim);margin-top:4px;min-height:20px}
+  #sfRank{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);
+    font-size:13px;color:var(--dim);min-height:34px}
+  #sfRank b{font-size:26px;font-weight:800;color:var(--txt);margin:0 5px}
+  /* 最終數字：整場報酬為主、本回合為輔 */
+  #sfMain{text-align:center;margin-top:16px}
+  #sfMain .lbl{font-size:11px;color:var(--dim);letter-spacing:.2em}
+  #sfRet{font-size:46px;font-weight:800;line-height:1.15}
+  #sfSub{font-size:12px;color:var(--dim);margin-top:6px}
+  #sfSub b{font-weight:600}
+  #sumBox.final #sumNormal{display:none}
+  #sumBox.final #sumRound{margin-bottom:12px}
   @media (prefers-reduced-motion:reduce){#allin.play,#allin.play b,.flashBox,#pf.play,#sfTitle.pop{animation-duration:.01s}}
 </style>
 </head>
@@ -226,10 +262,19 @@
 <div id="sum"><div id="sumBox">
   <div id="sumTtl">回合結算</div>
   <div id="sumRound">第 1 回合</div>
-  <div id="sumFinal"><div id="sfTitle"></div><div id="sfLine"></div><div id="sfRank"></div></div>
-  <div id="sumPlLbl">本回合損益</div>
-  <div><span id="sumPl" class="num">0</span><span id="sumPct" class="num"></span></div>
-  <div id="sumTot">結束時總資產 <b id="sumTotal" class="num">0</b><span id="sumAll"></span></div>
+  <div id="sumFinal">
+    <div id="sfCard" class="dark"><i class="sheen"></i><div id="sfTitle"></div><div id="sfLine"></div><div id="sfRank"></div></div>
+    <div id="sfMain">
+      <div class="lbl">整場報酬</div>
+      <div><span id="sfRet" class="num">0.00%</span></div>
+      <div id="sfSub">結束時總資產 <b id="sfTotal" class="num">0</b>　·　本回合損益 <b id="sfRpl" class="num">0</b></div>
+    </div>
+  </div>
+  <div id="sumNormal">
+    <div id="sumPlLbl">本回合損益</div>
+    <div><span id="sumPl" class="num">0</span><span id="sumPct" class="num"></span></div>
+    <div id="sumTot">結束時總資產 <b id="sumTotal" class="num">0</b></div>
+  </div>
   <div id="sumList"></div>
   <div id="sumFoot">點畫面任一處關閉</div>
 </div></div>
@@ -389,24 +434,40 @@ function showSummary(){
   $('sumPct').style.color=col;
   $('sumTotal').textContent=money(total);
 
+  const vals={}; let vmax=1;
+  IDS.forEach(id=>{
+    const s=stocks[id]; if(!s) return;
+    const unreal = me.hold[id] ? (s.price-me.cost[id])*me.hold[id] : 0;
+    vals[id]=realized[id]+unreal;
+    vmax=Math.max(vmax,Math.abs(vals[id]));
+  });
   $('sumList').innerHTML=IDS.map(id=>{
     const s=stocks[id]; if(!s) return '';
-    const unreal = me.hold[id] ? (s.price-me.cost[id])*me.hold[id] : 0;
-    const v = realized[id] + unreal;
+    const v=vals[id];
     const c = v>0.5?'var(--up)':v<-0.5?'var(--down)':'var(--dim)';
-    return '<div class="sr"><div class="l"><i style="background:var(--'+
+    const w = Math.max(2,Math.abs(v)/vmax*100);
+    const side = v>=0 ? 'flex-start' : 'flex-end';
+    return '<div class="sr"><div class="top"><div class="l"><i style="background:var(--'+
       (id==='A'?'a':id==='B'?'b':'c')+')"></i>'+s.name+'</div>'+
       '<div class="r" style="color:'+c+'"><span class="h">持有 '+me.hold[id]+'</span>'+
-      (v>0?'+':'')+money(v)+'</div></div>';
+      (v>0?'+':'')+money(v)+'</div></div>'+
+      '<div class="bar" style="justify-content:'+side+'"><i style="width:'+w.toFixed(1)+
+      '%;background:'+(Math.abs(v)<=0.5?'#2a3444':c)+'"></i></div></div>';
   }).join('');
 
   const isFinal = shown>=ROUNDS;
   if(shown===ROUNDS-1){ stats.r4=total; saveStats(); }
   $('sumTtl').textContent = isFinal ? '最終成績' : '回合結算';
   $('sumFinal').classList.toggle('on',isFinal);
-  $('sumAll').innerHTML='';
-  if(isFinal) startFinal(total);
-  countSummary(pl,pct,isFinal?FX.countFinalMs:FX.countMs);
+  $('sumBox').classList.toggle('final',isFinal);
+  if(isFinal){
+    $('sfTotal').textContent=money(total);
+    $('sfRpl').textContent=(pl>0?'+':'')+money(pl);
+    $('sfRpl').style.color=col;
+    startFinal(total);
+  }else{
+    countSummary(pl,pct,FX.countMs);
+  }
   $('sumFoot').textContent = isFinal ? '請看大螢幕公布名次' : '點畫面任一處關閉';
   $('sum').classList.add('show');
   if(sumTimer) clearTimeout(sumTimer);
@@ -449,8 +510,30 @@ function rankHTML(rank,total,topExact){
   const p=rank/total*100, tier=RANK_TIERS.find(x=>p<=x);
   return tier ? '全場前<b class="num">'+tier+'%</b>　／　'+total+' 人' : '完成全部回合　／　全場 '+total+' 人';
 }
+/* 整場報酬滾動 */
+let retRaf=0;
+function countRet(ret,ms){
+  cancelAnimationFrame(retRaf);
+  const t0=performance.now();
+  const step=t=>{
+    const p=Math.min(1,(t-t0)/ms), e=1-Math.pow(1-p,3), v=ret*e;
+    $('sfRet').textContent=(ret>0?'+':'')+v.toFixed(2)+'%';
+    if(p<1) retRaf=requestAnimationFrame(step);
+  };
+  retRaf=requestAnimationFrame(step);
+}
+/* 稱號卡等級：前 10% 金卡、前 50% 銀卡，其餘一般卡 */
+function tierOf(ret,rank,total){
+  if(rank!=null && total){
+    if(rank<=Math.ceil(total*0.1)) return 'gold';
+    if(rank<=Math.ceil(total*0.5)) return 'silver';
+    return 'dark';
+  }
+  return ret>0?'silver':'dark';
+}
 function showFinal(ret,rank,total,topExact){
   const t=pickTitle(ret,rank,total), el=$('sfTitle');
+  $('sfCard').className=tierOf(ret,rank,total);
   el.className=''; el.textContent=t[0]; void el.offsetWidth; el.classList.add('pop');
   $('sfLine').textContent=t[1];
   $('sfRank').innerHTML=rankHTML(rank,total,topExact);
@@ -459,7 +542,9 @@ let finalMetaRef=null, finalTimer=null;
 function startFinal(total){
   const ret=(total/START_CASH-1)*100, closeAt=nowSrv();
   const rc=ret>0?'var(--up)':ret<0?'var(--down)':'var(--txt)';
-  $('sumAll').innerHTML='　｜　整場報酬 <b class="num" style="color:'+rc+'">'+(ret>0?'+':'')+ret.toFixed(2)+'%</b>';
+  $('sfRet').style.color=rc;
+  countRet(ret,FX.countFinalMs);
+  $('sfCard').className='dark';
   const el=$('sfTitle'); el.className='wait'; el.textContent='名次計算中…';
   $('sfLine').textContent=''; $('sfRank').innerHTML='';
   if(finalMetaRef) finalMetaRef.off();
