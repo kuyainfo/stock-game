@@ -11,7 +11,7 @@
   :root{
     --bg:#0a0e14;--panel:#131a24;--line:#212c3b;--txt:#e6edf5;--dim:#7d8ea3;
     --up:#ff4d5e;--down:#00d68f;--flat:#8b9bb0;--gold:#ffd166;--silver:#c9d4e0;--bronze:#d99b6a;
-    --a:#ffb648;--b:#4da3ff;--c:#c77dff;
+    --a:#ffb648;--b:#4da3ff;--c:#c77dff;--d:#ff8fc8;
     --row:64px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -190,6 +190,40 @@
   .cr .t{font-size:12px;color:var(--dim);margin-left:8px}
   .cr .v{font-size:17px;font-weight:700;font-family:"IBM Plex Mono",ui-monospace,monospace}
   @media (prefers-reduced-motion:reduce){#crRoll.run,#confetti i,#beam,.pod .who,.pod .base{animation:none}}
+  /* ───── 新聞快訊條（圖表內上方，一次一則，新的取代舊的） ───── */
+  #newsBar{position:absolute;left:50%;top:10px;z-index:3;max-width:92%;transform:translate(-50%,-24px);opacity:0;pointer-events:none;
+    display:flex;align-items:center;gap:12px;background:rgba(18,24,34,.95);border:1px solid rgba(255,209,102,.5);border-radius:12px;
+    padding:10px 20px;box-shadow:0 8px 30px rgba(0,0,0,.5);transition:opacity .4s,transform .4s cubic-bezier(.2,.8,.2,1)}
+  #newsBar.show{opacity:1;transform:translate(-50%,0)}
+  #newsBar.ev{border-color:rgba(255,77,94,.65)}
+  #newsBar .tg{flex:none;font-size:15px;font-weight:800;padding:3px 12px;border-radius:999px;background:rgba(255,209,102,.16);color:var(--gold);white-space:nowrap}
+  #newsBar .tx{font-size:21px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* ───── 大事件全螢幕 ───── */
+  #evFx{position:fixed;inset:0;z-index:55;pointer-events:none;opacity:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at center,rgba(10,14,20,.86) 0%,rgba(10,14,20,.5) 55%,rgba(10,14,20,.1) 90%)}
+  #evFx .a{font-size:clamp(16px,2vw,26px);letter-spacing:.34em;color:var(--dim)}
+  #evFx .b{font-size:clamp(64px,9vw,140px);font-weight:900;letter-spacing:.08em;line-height:1.15;color:#fff}
+  #evFx .c{font-size:clamp(20px,2.4vw,34px);color:var(--txt);margin-top:6px}
+  #evFx.up{box-shadow:inset 0 0 0 5px var(--up),inset 0 0 160px rgba(255,77,94,.45)}
+  #evFx.down{box-shadow:inset 0 0 0 5px var(--down),inset 0 0 160px rgba(0,214,143,.4)}
+  #evFx.gold{box-shadow:inset 0 0 0 5px var(--gold),inset 0 0 160px rgba(255,209,102,.4)}
+  #evFx.gold .b{color:var(--gold)}
+  #evFx.play{animation:stageFade 3s ease both}
+  #evFx.play .b{animation:stageIn 3s cubic-bezier(.2,.8,.2,1) both}
+  /* ───── 命運轉盤 ───── */
+  #wheelOv{position:fixed;inset:0;z-index:52;display:none;align-items:center;justify-content:center;gap:6vw;background:rgba(10,14,20,.94)}
+  #wheelOv.on{display:flex}
+  .wbox{position:relative;width:min(74vh,46vw);aspect-ratio:1;flex:none}
+  .wbox svg{width:100%;height:100%;display:block;filter:drop-shadow(0 10px 40px rgba(0,0,0,.6))}
+  .wptr{position:absolute;left:50%;top:-10px;transform:translateX(-50%);border-left:24px solid transparent;border-right:24px solid transparent;border-top:44px solid #fff;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6));z-index:2}
+  #wvSide{width:min(36vw,560px)}
+  #wvSub{font-size:clamp(16px,1.6vw,24px);letter-spacing:.3em;color:var(--dim)}
+  #wvTitle{font-size:clamp(28px,3vw,46px);font-weight:800;margin:6px 0 26px}
+  #wvRes{opacity:0;transform:translateY(16px);transition:opacity .5s,transform .5s cubic-bezier(.2,.8,.2,1)}
+  #wvRes.on{opacity:1;transform:none}
+  #wvRes b{display:block;font-size:clamp(56px,6vw,96px);font-weight:900;color:var(--gold);line-height:1.1;text-shadow:0 0 30px rgba(255,209,102,.35)}
+  #wvRes span{display:block;font-size:clamp(20px,2vw,30px);margin-top:12px;line-height:1.5}
+  #wvRes i{display:block;font-style:normal;font-size:clamp(16px,1.5vw,22px);color:var(--dim);margin-top:12px}
 </style>
 </head>
 <body>
@@ -201,6 +235,11 @@
 <div id="leaderFx"></div>
 <div id="curtain"><i class="t"></i><i class="b"></i></div>
 <div id="stage"><div class="st-sub"></div><div class="st-main"></div><i class="st-bar"></i></div>
+<div id="evFx"><div class="a">主持人大事件</div><div class="b"></div><div class="c"></div></div>
+<div id="wheelOv">
+  <div class="wbox"><i class="wptr"></i><svg id="wvSvg" viewBox="0 0 200 200"></svg></div>
+  <div id="wvSide"><div id="wvSub">命運轉盤</div><div id="wvTitle">第 1 回合</div><div id="wvRes"><b></b><span></span><i></i></div></div>
+</div>
 <div id="wrap">
   <div id="head">
     <div id="ttl">股票大富翁</div>
@@ -212,7 +251,7 @@
 
   <div id="body">
     <div id="chartCol">
-      <div id="chartWrap"><canvas id="cv"></canvas><div id="cd"></div></div>
+      <div id="chartWrap"><canvas id="cv"></canvas><div id="cd"></div><div id="newsBar"><span class="tg"></span><span class="tx"></span></div></div>
       <div id="legend"></div>
       <div id="podium"><div id="confetti"></div></div>
     </div>
@@ -232,6 +271,57 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
+/* ───────── 本機測試模式 ─────────
+   網址加 ?local=1 並放在 stock_prototype.html 裡開啟時，改用測試頁提供的假資料庫，完全不連 Firebase。
+   正式網址沒有 ?local=1，這段不會啟動。 */
+(function(){
+  var Q=new URLSearchParams(location.search);
+  if(!Q.get('local') || window.parent===window) return;
+  var slot=Q.get('p')||'x', post=function(m){ m.slot=slot; window.parent.postMessage(m,'*'); };
+  /* 每個畫面各自一份 localStorage（同一個瀏覽器開多支手機也不會變成同一個人） */
+  var LS={};
+  try{ var hm=location.hash.match(/ls=([^&]*)/); if(hm) LS=JSON.parse(decodeURIComponent(hm[1]))||{}; }catch(e){}   // 測試頁「重新整理這支手機」時帶回身分
+  var fakeLS={getItem:function(k){ return Object.prototype.hasOwnProperty.call(LS,k)?LS[k]:null; },
+    setItem:function(k,v){ LS[k]=String(v); post({sg:'ls',k:k,v:String(v)}); },
+    removeItem:function(k){ delete LS[k]; post({sg:'ls',k:k,v:null}); },
+    clear:function(){ LS={}; }, key:function(i){ return Object.keys(LS)[i]||null; }};
+  Object.defineProperty(fakeLS,'length',{get:function(){ return Object.keys(LS).length; }});
+  try{ Object.defineProperty(window,'localStorage',{configurable:true,get:function(){ return fakeLS; }}); }catch(e){}
+  var data={}, listeners=[], ready=false, waits=[];
+  var clone=function(v){ return v==null?null:JSON.parse(JSON.stringify(v)); };
+  var parts=function(p){ return String(p).split('/').filter(Boolean); };
+  function get(p){ var o=data, ps=parts(p); for(var i=0;i<ps.length;i++){ if(o==null||typeof o!=='object') return null; o=o[ps[i]]; } return o===undefined?null:o; }
+  function prune(o){ if(o&&typeof o==='object'){ Object.keys(o).forEach(function(k){ if(o[k]==null) delete o[k]; else { prune(o[k]); if(typeof o[k]==='object'&&!Array.isArray(o[k])&&!Object.keys(o[k]).length) delete o[k]; } }); } return o; }
+  function setAt(p,v){ var ps=parts(p); if(!ps.length){ data=v==null?{}:clone(v); return; }
+    var o=data; for(var i=0;i<ps.length-1;i++){ if(o[ps[i]]==null||typeof o[ps[i]]!=='object') o[ps[i]]={}; o=o[ps[i]]; }
+    if(v==null) delete o[ps[ps.length-1]]; else o[ps[ps.length-1]]=prune(clone(v)); }
+  function snap(p){ var v=clone(get(p)); return {val:function(){ return clone(v); },numChildren:function(){ return v&&typeof v==='object'?Object.keys(v).length:0; },exists:function(){ return v!=null; }}; }
+  function notify(){ listeners.forEach(function(l){ var v=JSON.stringify(get(l.path)); if(v!==l.last){ l.last=v; var s=snap(l.path); setTimeout(function(){ l.cb(s); },0); } }); }
+  function whenReady(f){ if(ready) setTimeout(f,0); else waits.push(f); }
+  window.addEventListener('message',function(e){
+    var m=e.data; if(!m||m.sg!=='db') return;
+    data=m.data||{};
+    if(!ready){ ready=true; waits.splice(0).forEach(function(f){ f(); }); }
+    notify();
+  });
+  function ref(path){ path=path||''; return {
+    child:function(c){ return ref(path+'/'+c); },
+    on:function(ev,cb){
+      if(path==='.info/connected'){ setTimeout(function(){ cb({val:function(){ return true; }}); },0); return cb; }
+      if(path==='.info/serverTimeOffset'){ setTimeout(function(){ cb({val:function(){ return 0; }}); },0); return cb; }
+      whenReady(function(){ var l={path:path,cb:cb,last:JSON.stringify(get(path))}; listeners.push(l); cb(snap(path)); });
+      return cb; },
+    off:function(){ for(var i=listeners.length-1;i>=0;i--) if(listeners[i].path===path) listeners.splice(i,1); },
+    once:function(){ return new Promise(function(r){ whenReady(function(){ r(snap(path)); }); }); },
+    set:function(v){ setAt(path,v); notify(); post({sg:'op',t:'set',p:path,v:clone(v)}); return Promise.resolve(); },
+    update:function(o){ Object.keys(o).forEach(function(k){ setAt(path+'/'+k,o[k]); }); notify(); post({sg:'op',t:'update',p:path,v:clone(o)}); return Promise.resolve(); },
+    remove:function(){ setAt(path,null); notify(); post({sg:'op',t:'set',p:path,v:null}); return Promise.resolve(); }
+  }; }
+  window.firebase={initializeApp:function(){ return {}; }, database:function(){ return {ref:ref}; }};
+  post({sg:'hello'});
+})();
+</script>
+<script>
 (function(){
 "use strict";
 
@@ -248,7 +338,18 @@ firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
 const $=id=>document.getElementById(id);
-const IDS=['A','B','C'], VAR={A:'--a',B:'--b',C:'--c'};
+const IDS=['A','B','C','D'], VAR={A:'--a',B:'--b',C:'--c',D:'--d'};
+const PAIRS=[]; IDS.forEach((x,i)=>IDS.slice(i+1).forEach(y=>PAIRS.push([x,y])));
+const Z4=()=>({A:[],B:[],C:[],D:[]});
+/* 事件定義（轉盤順序須與行情主機一致） */
+const SPIN_MS=5000;
+const WHEEL=[
+  {k:'typhoon',t:'颱風假',c:'#3d7fd6'},{k:'red',t:'天降紅包',c:'#e5404f'},{k:'bull',t:'主力進場',c:'#e89a2c'},{k:'cut',t:'減資',c:'#4f5d70'},
+  {k:'calm',t:'風平浪靜',c:'#12a173'},{k:'audit',t:'查稅',c:'#8a4fd0'},{k:'bear',t:'主力出貨',c:'#2b7a66'},{k:'div',t:'配息',c:'#c9982f'}
+];
+const TAGT={up:'📈 利多',moon:'🚀 衝漲停',down:'📉 利空',crash:'💥 重挫',q:'❓ 無法預測',flash:'⚡ 閃電快訊'};
+function hsh(str){ let h=2166136261; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+const hitOf=(id,w)=> hsh(id+'#'+w.round+'#'+w.seed)%100 < w.rate;
 const START_CASH=100000, ROUNDS=5, ROW=64, TOP_BIG=15, WINDOW_SEC=84;
 /* 最終結算：前幾名在玩家手機顯示精確名次，其餘顯示區間。
    預設 20；網址加 ?top=30 可改成前 30 名（例：stock_rank.html?top=30） */
@@ -260,8 +361,9 @@ const AWARD_WAIT=8000, ROLL_PER_ROW=1060, MIN_ROLL_ROWS=8;
 let stocks={}, players={}, state='idle', round=1;
 let endAt=0, roundSec=90, warnSec=10, srvOffset=0;
 /* 各股自行累積的歷史點：{A:[{t,p}], ...}，t 為本機 performance.now() */
-let hist={A:[],B:[],C:[]}, lastRoundKey='';
-let flashT={A:0,B:0,C:0}, mReady=false, prevState=null, prevRound=1;
+let hist=Z4(), lastRoundKey='';
+let flashT={A:0,B:0,C:0,D:0}, mReady=false, prevState=null, prevRound=1;
+let mk={}, gid=0, lastSt=null;
 let crossSign={}, crossAt={}, crossFx=[], lastPct={};
 
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -271,9 +373,12 @@ db.ref('.info/serverTimeOffset').on('value',s=>{ srvOffset=s.val()||0; });
 /* ───────── 行情 ───────── */
 db.ref('market').on('value',snap=>{
   const d=snap.val(); if(!d) return;
+  mk=d; gid=d.gid||0;
   state=d.state||'idle'; round=d.round||1;
+  if(state==='spin') openWheel(); else closeWheel();
+  if(mReady){ checkNews(); checkEvent(); }
   if(mReady && prevState!==state){
-    if(state==='open'||state==='idle') exitAward();
+    if(state==='open'||state==='idle'||state==='spin') exitAward();
     if(state==='open') playStage('第 '+round+' 回合','開盤','--up');
     else if(state==='closed' && prevState==='open'){
       playStage(prevRound>=ROUNDS?'最終回合':'第 '+prevRound+' 回合','收盤','--gold');
@@ -291,7 +396,8 @@ db.ref('market').on('value',snap=>{
 
   /* 換回合 or 重新開盤 → 清空歷史，讓每回合是獨立一張圖 */
   const rk=round+'|'+(d.stocks&&d.stocks.A?d.stocks.A.open:0);
-  if(rk!==lastRoundKey){ hist={A:[],B:[],C:[]}; lastRoundKey=rk; crossSign={}; crossFx=[]; lastPct={}; }
+  const justOpened=(lastSt!=='open' && state==='open'); lastSt=state;
+  if(rk!==lastRoundKey || justOpened){ hist=Z4(); lastRoundKey=rk; crossSign={}; crossFx=[]; lastPct={}; }
 
   /* 累積當下價格 */
   const now=performance.now();
@@ -321,7 +427,7 @@ function renderHead(){
   $('round').innerHTML=`第 ${round} 回合<small>／ ${ROUNDS}</small>`;
   const st=$('state'); st.className='';
   if(state==='open'){st.textContent='開盤中';st.className='open';}
-  else if(state==='closing'){st.textContent='關盤倒數';st.className='closing';}
+  else if(state==='closing'||state==='spin'){st.textContent=state==='spin'?'命運轉盤':'關盤倒數';st.className='closing';}
   else if(state==='closed') st.textContent='已關盤';
   else st.textContent='尚未開盤';
 }
@@ -519,7 +625,7 @@ function draw(){
 
   /* 超車偵測：兩支股票漲跌幅高低互換的瞬間；同一組 3 秒內只閃一次 */
   if(state==='open'){
-    [['A','B'],['A','C'],['B','C']].forEach(([x,y])=>{
+    PAIRS.forEach(([x,y])=>{
       const ox=heads[x], oy=heads[y]; if(!ox||!oy) return;
       const d=ox.pct-oy.pct, sg=d>0?1:d<0?-1:0;
       if(!sg) return;
@@ -556,6 +662,88 @@ function draw(){
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
+
+/* ───────── 命運轉盤、新聞、大事件 ───────── */
+function wheelSVG(){
+  const cx=100,cy=100,R=96,step=360/WHEEL.length;
+  const pt=(a,r)=>{ const t=a*Math.PI/180; return [cx+r*Math.sin(t), cy-r*Math.cos(t)]; };
+  let h='<g id="wvG" style="transform-origin:100px 100px">';
+  WHEEL.forEach((w,i)=>{
+    const p0=pt(i*step,R), p1=pt((i+1)*step,R);
+    h+='<path d="M100 100L'+p0[0].toFixed(2)+' '+p0[1].toFixed(2)+'A'+R+' '+R+' 0 0 1 '+p1[0].toFixed(2)+' '+p1[1].toFixed(2)+'Z" fill="'+w.c+'" stroke="#0a0e14" stroke-width="1.5"/>';
+    h+='<g transform="rotate('+((i+.5)*step)+' 100 100)"><text x="100" y="36" text-anchor="middle" font-size="11.5" font-weight="800" fill="#fff" font-family="Noto Sans TC,PingFang TC,Microsoft JhengHei,sans-serif">'+w.t+'</text></g>';
+  });
+  h+='</g><circle cx="100" cy="100" r="97" fill="none" stroke="#ffd166" stroke-width="3"/><circle cx="100" cy="100" r="14" fill="#0a0e14" stroke="#ffd166" stroke-width="3"/>';
+  return h;
+}
+$('wvSvg').innerHTML=wheelSVG();
+let wheelOn=false, wheelSeed=null, wheelRaf=0, wheelShown=false;
+function curWheel(){ const w=mk.wheel; return (w && w.gid===gid && w.round===round)?w:null; }
+function openWheel(){
+  const w=curWheel(); if(!w) return;
+  if(wheelOn && wheelSeed===w.seed) return;
+  wheelOn=true; wheelSeed=w.seed; wheelShown=false;
+  $('wvTitle').textContent='第 '+w.round+' 回合';
+  $('wvRes').classList.remove('on');
+  $('wheelOv').classList.add('on');
+  const g=document.getElementById('wvG'), step=360/WHEEL.length, fin=360*5+(360-(w.idx+.5+(w.jit||0))*step);
+  cancelAnimationFrame(wheelRaf);
+  const run=()=>{
+    const p=Math.min(1,Math.max(0,(Date.now()+srvOffset-(mk.spinAt||0))/SPIN_MS));
+    g.style.transform='rotate('+(fin*(1-Math.pow(1-p,4))).toFixed(2)+'deg)';
+    if(p>=1){ revealWheel(w); return; }
+    wheelRaf=requestAnimationFrame(run);
+  };
+  wheelRaf=requestAnimationFrame(run);
+  setTimeout(()=>{ if(wheelSeed===w.seed && !wheelShown){ g.style.transform='rotate('+fin.toFixed(2)+'deg)'; revealWheel(w); } },
+    Math.max(0,(mk.spinAt||0)+SPIN_MS-(Date.now()+srvOffset))+80);
+}
+function revealWheel(w){
+  if(wheelShown) return; wheelShown=true;
+  const r=$('wvRes');
+  r.querySelector('b').textContent=w.title;
+  r.querySelector('span').textContent=w.desc;
+  let n=null;
+  if(w.k==='red'||w.k==='audit') n=Object.keys(players).filter(id=>hitOf(id,w)).length;
+  else if(w.k==='div'||w.k==='cut') n=Object.keys(players).filter(id=>(((players[id]||{}).hold||{})[w.sid]||0)>0).length;
+  r.querySelector('i').textContent = n==null ? '全場一起適用' : ('全場 '+n+' 人'+(w.k==='red'||w.k==='div'?'中獎':'中招'));
+  r.classList.add('on');
+}
+function closeWheel(){ if(!wheelOn) return; wheelOn=false; cancelAnimationFrame(wheelRaf); $('wheelOv').classList.remove('on'); }
+
+let newsSeen=0, evSeen=0, newsHide=null;
+function banner(tag,text,isEv){
+  const el=$('newsBar');
+  el.querySelector('.tg').textContent=TAGT[tag]||'';
+  el.querySelector('.tx').textContent=text;
+  el.classList.toggle('ev',!!isEv);
+  el.classList.add('show');
+  clearTimeout(newsHide); newsHide=setTimeout(()=>el.classList.remove('show'),13000);
+}
+function checkNews(){
+  const n=mk.news; if(!n || n.gid!==gid || n.round!==round || n.at<=newsSeen) return;
+  newsSeen=n.at;
+  if(state!=='open' || Date.now()+srvOffset-n.at>15000) return;
+  if(n.kind==='flash'){
+    if(Date.now()+srvOffset-n.at>(n.dur||6000)) return;
+    fxShow('⚡ 閃電快訊',n.title,n.desc,'gold');
+    banner('flash','【閃電快訊】'+n.title+'　'+n.desc,true);
+    return;
+  }
+  banner(n.tag,'【快訊】'+n.t);
+}
+function checkEvent(){
+  const e=mk.event; if(!e || e.gid!==gid || e.round!==round || e.at<=evSeen) return;
+  evSeen=e.at;
+  if(state!=='open' || Date.now()+srvOffset-e.at>10000) return;
+  fxShow('主持人大事件',e.title,e.desc,e.k==='crash'?'down':'up');
+  banner(e.tag||'up','【大事件】'+e.title+'　'+e.desc,true);
+}
+function fxShow(a,b,c,cls){
+  const fx=$('evFx');
+  fx.querySelector('.a').textContent=a; fx.querySelector('.b').textContent=b; fx.querySelector('.c').textContent=c;
+  fx.className=cls; void fx.offsetWidth; fx.classList.add('play');
+}
 
 /* ───────── 排行榜 ───────── */
 function assetOf(p){

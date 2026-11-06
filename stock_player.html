@@ -7,7 +7,7 @@
 <style>
   :root{
     --bg:#0a0e14;--panel:#131a24;--line:#212c3b;--txt:#e6edf5;--dim:#7d8ea3;
-    --up:#ff4d5e;--down:#00d68f;--flat:#8b9bb0;--a:#ffb648;--b:#4da3ff;--c:#c77dff;--gold:#ffd166;
+    --up:#ff4d5e;--down:#00d68f;--flat:#8b9bb0;--a:#ffb648;--b:#4da3ff;--c:#c77dff;--d:#ff8fc8;--gold:#ffd166;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   .tbtn,.card,#entryBtn{
@@ -35,19 +35,23 @@
   #heroRow{display:flex;gap:20px;margin-top:8px;font-size:12px;color:var(--dim);flex-wrap:wrap}
   #heroRow b{color:var(--txt);font-weight:600}
   .sec{font-size:11px;letter-spacing:.22em;color:var(--dim);margin:16px 2px 8px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 14px;margin-bottom:9px;position:relative;overflow:hidden;cursor:pointer;transition:border-color .15s}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 12px 8px;margin-bottom:7px;position:relative;overflow:hidden;cursor:pointer;transition:border-color .15s}
   .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--k)}
   .card.sel{border-color:var(--k);background:#182130}
-  .r1{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-  .nm{font-size:15px;font-weight:600}
+  .r1{display:flex;align-items:center;gap:8px}
+  .r1 .nmw{flex:1;min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .nm{font-size:15px;font-weight:600;white-space:nowrap}
+  .pxw{text-align:right;white-space:nowrap}
+  .ntag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(255,209,102,.14);color:var(--gold);border:1px solid rgba(255,209,102,.45);animation:tagBlink 1s ease-in-out infinite}
+  @keyframes tagBlink{50%{opacity:.55}}
   .mode{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
   .mode.m-growth{color:var(--gold);border-color:rgba(255,209,102,.4)}
   .mode.m-spec{color:var(--c);border-color:rgba(199,125,255,.4)}
   .r2{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
-  .px{font-size:26px;font-weight:700;line-height:1}
-  .chg{font-size:13px;font-weight:600;margin-left:7px}
-  .spark{width:96px;height:34px;flex:none}
-  .r3{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-top:9px;border-top:1px solid var(--line);padding-top:8px}
+  .px{font-size:21px;font-weight:700;line-height:1;display:block}
+  .chg{font-size:12px;font-weight:600;display:block;margin-top:2px}
+  .spark{width:70px;height:28px;flex:none}
+  .r3{display:flex;justify-content:space-between;font-size:11.5px;color:var(--dim);margin-top:6px;border-top:1px solid var(--line);padding-top:5px}
   .r3 b{font-weight:600}
   #bar{position:fixed;left:0;right:0;bottom:0;background:rgba(13,19,28,.97);border-top:1px solid var(--line);padding:10px 14px calc(12px + env(safe-area-inset-bottom));backdrop-filter:blur(8px)}
   #barIn{max-width:460px;margin:0 auto}
@@ -188,7 +192,71 @@
   #sfSub b{font-weight:600}
   #sumBox.final #sumNormal{display:none}
   #sumBox.final #sumRound{margin-bottom:12px}
-  @media (prefers-reduced-motion:reduce){#allin.play,#allin.play b,.flashBox,#pf.play,#sfTitle.pop{animation-duration:.01s}}
+  /* ───── 內線提示 ───── */
+  #tip{display:none;margin:-4px 0 10px;padding:8px 12px;border-radius:10px;font-size:12.5px;line-height:1.6;
+    background:rgba(199,125,255,.10);border:1px dashed rgba(199,125,255,.55);color:#e2c8ff}
+  #tip.on{display:block}
+  /* ───── 新聞快訊條 ───── */
+  #newsTop{position:fixed;left:0;right:0;top:0;z-index:31;padding:10px 14px calc(10px + env(safe-area-inset-top));
+    background:linear-gradient(180deg,#1d2533,#151c27);border-bottom:1px solid rgba(255,209,102,.5);box-shadow:0 6px 20px rgba(0,0,0,.45);
+    transform:translateY(-110%);transition:transform .35s cubic-bezier(.22,.8,.28,1)}
+  #newsTop.show{transform:translateY(0)}
+  #newsTop .nt{max-width:460px;margin:0 auto;display:flex;gap:10px;align-items:flex-start}
+  #newsTop .tg{flex:none;font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;background:rgba(255,209,102,.16);color:var(--gold);white-space:nowrap}
+  #newsTop .tx{font-size:14px;font-weight:600;line-height:1.5}
+  #newsTop.ev{border-bottom-color:rgba(255,77,94,.6)}
+  /* ───── 大事件全螢幕 ───── */
+  #evFx{position:fixed;inset:0;z-index:47;pointer-events:none;opacity:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;
+    background:radial-gradient(ellipse at center,rgba(10,14,20,.88),rgba(10,14,20,.55) 70%)}
+  #evFx .a{font-size:13px;letter-spacing:.3em;color:var(--dim)}
+  #evFx .b{font-size:40px;font-weight:900;margin:6px 0;color:#fff}
+  #evFx .c{font-size:15px;color:var(--txt)}
+  #evFx.up{box-shadow:inset 0 0 0 3px var(--up),inset 0 0 80px rgba(255,77,94,.5)}
+  #evFx.down{box-shadow:inset 0 0 0 3px var(--down),inset 0 0 80px rgba(0,214,143,.45)}
+  #evFx.gold{box-shadow:inset 0 0 0 3px var(--gold),inset 0 0 80px rgba(255,209,102,.45)}
+  #evFx.gold .b{color:var(--gold)}
+  #evFx.play{animation:allinFade 2.6s ease-out both}
+  #evFx.play .b{animation:allinPop 2.6s cubic-bezier(.2,1.4,.4,1) both}
+  /* ───── 抽牌 ───── */
+  #pick{position:fixed;inset:0;z-index:45;background:rgba(10,14,20,.94);display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+  #pick.on{display:flex}
+  #pick h3{font-size:12px;letter-spacing:.3em;color:var(--dim);font-weight:500}
+  #pick h2{font-size:22px;margin:4px 0 20px}
+  #pkRow{display:flex;gap:10px;justify-content:center;width:100%;max-width:380px}
+  .pc{flex:1;aspect-ratio:3/4.3;perspective:700px;touch-action:manipulation;-webkit-user-select:none;user-select:none;cursor:pointer}
+  .pc .in{position:relative;width:100%;height:100%;transition:transform .6s cubic-bezier(.3,1.3,.5,1);transform-style:preserve-3d}
+  .pc.flip .in{transform:rotateY(180deg)}
+  .pc .f,.pc .bk{position:absolute;inset:0;border-radius:12px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px}
+  .pc .bk{background:repeating-linear-gradient(45deg,#1f2a3a 0 6px,#18212e 6px 12px);border:2px solid #34445a;font-size:34px;font-weight:900;color:var(--gold)}
+  .pc .f{transform:rotateY(180deg);background:#f4ecd8;color:#2a2116;border:2px solid var(--kc)}
+  .pc .f .k{font-size:11px;font-weight:800;color:#fff;background:var(--kc);padding:2px 10px;border-radius:999px;letter-spacing:.2em}
+  .pc .f .n{font-size:16px;font-weight:900;margin:10px 0 6px;line-height:1.3}
+  .pc .f .d{font-size:11px;line-height:1.5;color:#5a4c38}
+  .pc.k1{--kc:#e8862a}.pc.k2{--kc:#2f74c0}
+  .pc.miss{opacity:.38}
+  .pc.mine .f{box-shadow:0 0 0 3px var(--gold),0 0 26px rgba(255,209,102,.5)}
+  #pkMsg{min-height:44px;margin-top:18px;font-size:13px;color:var(--dim);line-height:1.7}
+  #pkBtn{margin-top:8px;background:var(--up);color:#fff;border:0;border-radius:10px;font-size:15px;font-weight:700;padding:12px 30px;font-family:inherit;visibility:hidden;touch-action:manipulation}
+  #pkBtn.on{visibility:visible}
+  /* ───── 命運轉盤 ───── */
+  #wheelOv{position:fixed;inset:0;z-index:48;background:rgba(10,14,20,.95);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+  #wheelOv.on{display:flex}
+  #wheelOv h3{font-size:12px;letter-spacing:.3em;color:var(--dim);font-weight:500;margin-bottom:12px}
+  .wbox{position:relative;width:min(78vw,300px);aspect-ratio:1}
+  .wbox svg{width:100%;height:100%;display:block}
+  .wptr{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;border-top:24px solid #fff;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));z-index:2}
+  #wvRes{min-height:58px;margin-top:16px;opacity:0;transition:opacity .4s}
+  #wvRes.on{opacity:1}
+  #wvRes b{display:block;font-size:26px;font-weight:900;color:var(--gold)}
+  #wvRes span{font-size:13px;color:var(--txt)}
+  #wvMe{margin-top:10px;width:100%;max-width:340px;opacity:0;transition:opacity .4s}
+  #wvMe.on{opacity:1}
+  #wvMe div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-top:7px;font-size:13px;line-height:1.55;text-align:left}
+  #wvMe div.good{border-color:rgba(255,77,94,.5)}
+  #wvMe div.bad{border-color:rgba(0,214,143,.5)}
+  #wvMe .amt{float:right;font-family:ui-monospace,monospace;font-weight:700;margin-left:8px}
+  #wvFoot{margin-top:12px;font-size:11px;color:var(--dim);min-height:16px}
+  @media (prefers-reduced-motion:reduce){#allin.play,#allin.play b,.flashBox,#pf.play,#sfTitle.pop,#evFx.play,#evFx.play .b{animation-duration:.01s}}
 </style>
 </head>
 <body>
@@ -200,7 +268,7 @@
   <p class="ln">你盯著那串數字看了很久。</p>
   <p class="ln big">「我要讓它變兩倍。」</p>
   <p class="ln">十萬塊，一毛不留全進了市場。</p>
-  <p class="ln">三支股票、五個回合，<br>沒有手續費，也沒有明牌。</p>
+  <p class="ln">四支股票、五個回合，<br>沒有手續費，也沒有明牌。</p>
   <p class="ln">隔壁桌的同事已經開始下單了。</p>
   <p class="ln">你深吸一口氣——</p>
   <p class="ln big">開盤。</p>
@@ -213,6 +281,7 @@
   <div class="rrow"><span class="ri">💰</span><div><b>資金</b><i>每人起始 10 萬，全場同一條起跑線</i></div></div>
   <div class="rrow"><span class="ri">📈</span><div><b>操作</b><i>開盤後隨時買、隨時賣，六顆按鈕直接下單</i></div></div>
   <div class="rrow"><span class="ri">⏱</span><div><b>回合</b><i>共 5 回合，持股會延續到下一回合</i></div></div>
+  <div class="rrow"><span class="ri">🎲</span><div><b>事件</b><i>每回合開盤前抽一張機會／命運卡、全場一起轉命運轉盤；盤中留意新聞快訊</i></div></div>
   <div class="rrow"><span class="ri">🏆</span><div><b>勝負</b><i>最後以「現金＋持股市值」比總資產</i></div></div>
   <button id="rulesBtn">我準備好了</button>
 </div>
@@ -239,6 +308,7 @@
       <div>剩餘 <b id="left" class="num">—</b></div>
     </div>
   </div>
+  <div id="tip"></div>
   <div class="sec">選一支下單</div>
   <div id="cards"></div>
 </div>
@@ -279,11 +349,78 @@
   <div id="sumFoot">點畫面任一處關閉</div>
 </div></div>
 <div id="allin"><b>ALL IN</b><span></span></div>
+<div id="newsTop"><div class="nt"><span class="tg"></span><span class="tx"></span></div></div>
+<div id="evFx"><div class="a">主持人大事件</div><div class="b"></div><div class="c"></div></div>
+<div id="pick">
+  <h3 id="pkSub">第 1 回合</h3>
+  <h2>抽一張 機會／命運</h2>
+  <div id="pkRow"></div>
+  <div id="pkMsg">選一張牌，效果在開盤時生效</div>
+  <button id="pkBtn">知道了</button>
+</div>
+<div id="wheelOv">
+  <h3 id="wvSub">命運轉盤</h3>
+  <div class="wbox"><i class="wptr"></i><svg id="wvSvg" viewBox="0 0 200 200"></svg></div>
+  <div id="wvRes"><b></b><span></span></div>
+  <div id="wvMe"></div>
+  <div id="wvFoot"></div>
+</div>
 <div id="pf"></div>
 <div id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+/* ───────── 本機測試模式 ─────────
+   網址加 ?local=1 並放在 stock_prototype.html 裡開啟時，改用測試頁提供的假資料庫，完全不連 Firebase。
+   正式網址沒有 ?local=1，這段不會啟動。 */
+(function(){
+  var Q=new URLSearchParams(location.search);
+  if(!Q.get('local') || window.parent===window) return;
+  var slot=Q.get('p')||'x', post=function(m){ m.slot=slot; window.parent.postMessage(m,'*'); };
+  /* 每個畫面各自一份 localStorage（同一個瀏覽器開多支手機也不會變成同一個人） */
+  var LS={};
+  try{ var hm=location.hash.match(/ls=([^&]*)/); if(hm) LS=JSON.parse(decodeURIComponent(hm[1]))||{}; }catch(e){}   // 測試頁「重新整理這支手機」時帶回身分
+  var fakeLS={getItem:function(k){ return Object.prototype.hasOwnProperty.call(LS,k)?LS[k]:null; },
+    setItem:function(k,v){ LS[k]=String(v); post({sg:'ls',k:k,v:String(v)}); },
+    removeItem:function(k){ delete LS[k]; post({sg:'ls',k:k,v:null}); },
+    clear:function(){ LS={}; }, key:function(i){ return Object.keys(LS)[i]||null; }};
+  Object.defineProperty(fakeLS,'length',{get:function(){ return Object.keys(LS).length; }});
+  try{ Object.defineProperty(window,'localStorage',{configurable:true,get:function(){ return fakeLS; }}); }catch(e){}
+  var data={}, listeners=[], ready=false, waits=[];
+  var clone=function(v){ return v==null?null:JSON.parse(JSON.stringify(v)); };
+  var parts=function(p){ return String(p).split('/').filter(Boolean); };
+  function get(p){ var o=data, ps=parts(p); for(var i=0;i<ps.length;i++){ if(o==null||typeof o!=='object') return null; o=o[ps[i]]; } return o===undefined?null:o; }
+  function prune(o){ if(o&&typeof o==='object'){ Object.keys(o).forEach(function(k){ if(o[k]==null) delete o[k]; else { prune(o[k]); if(typeof o[k]==='object'&&!Array.isArray(o[k])&&!Object.keys(o[k]).length) delete o[k]; } }); } return o; }
+  function setAt(p,v){ var ps=parts(p); if(!ps.length){ data=v==null?{}:clone(v); return; }
+    var o=data; for(var i=0;i<ps.length-1;i++){ if(o[ps[i]]==null||typeof o[ps[i]]!=='object') o[ps[i]]={}; o=o[ps[i]]; }
+    if(v==null) delete o[ps[ps.length-1]]; else o[ps[ps.length-1]]=prune(clone(v)); }
+  function snap(p){ var v=clone(get(p)); return {val:function(){ return clone(v); },numChildren:function(){ return v&&typeof v==='object'?Object.keys(v).length:0; },exists:function(){ return v!=null; }}; }
+  function notify(){ listeners.forEach(function(l){ var v=JSON.stringify(get(l.path)); if(v!==l.last){ l.last=v; var s=snap(l.path); setTimeout(function(){ l.cb(s); },0); } }); }
+  function whenReady(f){ if(ready) setTimeout(f,0); else waits.push(f); }
+  window.addEventListener('message',function(e){
+    var m=e.data; if(!m||m.sg!=='db') return;
+    data=m.data||{};
+    if(!ready){ ready=true; waits.splice(0).forEach(function(f){ f(); }); }
+    notify();
+  });
+  function ref(path){ path=path||''; return {
+    child:function(c){ return ref(path+'/'+c); },
+    on:function(ev,cb){
+      if(path==='.info/connected'){ setTimeout(function(){ cb({val:function(){ return true; }}); },0); return cb; }
+      if(path==='.info/serverTimeOffset'){ setTimeout(function(){ cb({val:function(){ return 0; }}); },0); return cb; }
+      whenReady(function(){ var l={path:path,cb:cb,last:JSON.stringify(get(path))}; listeners.push(l); cb(snap(path)); });
+      return cb; },
+    off:function(){ for(var i=listeners.length-1;i>=0;i--) if(listeners[i].path===path) listeners.splice(i,1); },
+    once:function(){ return new Promise(function(r){ whenReady(function(){ r(snap(path)); }); }); },
+    set:function(v){ setAt(path,v); notify(); post({sg:'op',t:'set',p:path,v:clone(v)}); return Promise.resolve(); },
+    update:function(o){ Object.keys(o).forEach(function(k){ setAt(path+'/'+k,o[k]); }); notify(); post({sg:'op',t:'update',p:path,v:clone(o)}); return Promise.resolve(); },
+    remove:function(){ setAt(path,null); notify(); post({sg:'op',t:'set',p:path,v:null}); return Promise.resolve(); }
+  }; }
+  window.firebase={initializeApp:function(){ return {}; }, database:function(){ return {ref:ref}; }};
+  post({sg:'hello'});
+})();
+</script>
 <script>
 (function(){
 "use strict";
@@ -301,8 +438,27 @@ firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
 const $=id=>document.getElementById(id);
-const START_CASH=100000, ROUNDS=5, HIST=40, IDS=['A','B','C'];
-const COLOR={A:'--a',B:'--b',C:'--c'};
+const START_CASH=100000, ROUNDS=5, HIST=40, IDS=['A','B','C','D'];
+const COLOR={A:'--a',B:'--b',C:'--c',D:'--d'};
+const Z4=()=>({A:0,B:0,C:0,D:0});
+
+/* ───────── 事件定義（轉盤順序、牌卡順序須與行情主機一致） ───────── */
+const SPIN_MS=5000;
+const WHEEL=[
+  {k:'typhoon',t:'颱風假',c:'#3d7fd6'},{k:'red',t:'天降紅包',c:'#e5404f'},{k:'bull',t:'主力進場',c:'#e89a2c'},{k:'cut',t:'減資',c:'#4f5d70'},
+  {k:'calm',t:'風平浪靜',c:'#12a173'},{k:'audit',t:'查稅',c:'#8a4fd0'},{k:'bear',t:'主力出貨',c:'#2b7a66'},{k:'div',t:'配息',c:'#c9982f'}
+];
+const CARDS=[
+  {k:'機會',n:'股東紅包',d:'總資產 +3%',f:.03},
+  {k:'機會',n:'生日禮金',d:'總資產 +2%',f:.02},
+  {k:'命運',n:'稅務局來了',d:'總資產 −2%',f:-.02},
+  {k:'命運',n:'繳過路費',d:'總資產 −1%',f:-.01},
+  {k:'機會',n:'內線消息',d:'開盤時偷偷告訴你本回合第一則新聞',hint:1},
+  {k:'命運',n:'平安符',d:'這回合什麼事都沒發生，安心看盤',f:0}
+];
+const TAGT={up:'📈 利多',moon:'🚀 衝漲停',down:'📉 利空',crash:'💥 重挫',q:'❓ 無法預測',flash:'⚡ 閃電快訊'};
+function hsh(str){ let h=2166136261; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+const hitOf=(id,w)=> hsh(id+'#'+w.round+'#'+w.seed)%100 < w.rate;
 const MODE_LABEL={stable:'穩健',growth:'成長',spec:'投機'};
 const money=n=>(Math.round(n)||0).toLocaleString('en-US');
 
@@ -334,10 +490,11 @@ function resetStats(){ stats={trades:0,allIn:0,traded:{},r4:null}; saveStats(); 
 try{ const d=JSON.parse(localStorage.getItem('kuya_stock_stats')||'null'); if(d) stats=Object.assign(stats,d); }catch(e){}
 
 let stocks={}, state='idle', round=1, sel=null, prevState='idle';
-let me={name:'',cash:START_CASH,hold:{A:0,B:0,C:0},cost:{A:0,B:0,C:0}};
+let me={name:'',cash:START_CASH,hold:Z4(),cost:Z4(),card:{},ev:{}};
+let mk={}, gid=0, done=0;
 let roundStartAsset=START_CASH, myRef=null, ready=false;
 let endAt=0, warnSec=10, srvOffset=0;
-let realized={A:0,B:0,C:0};      // 本回合已實現損益（含已賣出部分）
+let realized=Z4();      // 本回合已實現損益（含已賣出部分）
 let sumTimer=null, lastSumRound=0, playRound=0, allInFxRound=0;
 
 db.ref('.info/serverTimeOffset').on('value',s=>{ srvOffset = s.val() || 0; });
@@ -352,7 +509,7 @@ function loadRoundStart(){
     const d=JSON.parse(localStorage.getItem('kuya_stock_rs')||'null');
     if(d && d.round===round){
       roundStartAsset=d.asset;
-      realized=Object.assign({A:0,B:0,C:0}, d.realized||{});
+      realized=Object.assign(Z4(), d.realized||{});
       return true;
     }
   }catch(e){}
@@ -361,7 +518,7 @@ function loadRoundStart(){
 function beginRound(){
   if(round===1) resetStats();
   roundStartAsset=totalAsset();
-  realized={A:0,B:0,C:0};
+  realized=Z4();
   saveRoundStart();
 }
 
@@ -375,9 +532,10 @@ db.ref('.info/connected').on('value',s=>{ $('conn').classList.toggle('show', s.v
 /* ───────── 讀行情 ───────── */
 db.ref('market').on('value',snap=>{
   const d=snap.val(); if(!d) return;
+  mk=d; gid=d.gid||0; done=d.done||0;
   prevState=state; state=d.state||'idle'; round=d.round||1;
   if(state==='open') playRound=round;
-  if(state==='open') skipIntro();
+  if(state==='open'||state==='spin') skipIntro();
   if(d.stocks){
     IDS.forEach(id=>{
       const r=d.stocks[id]; if(!r) return;
@@ -394,8 +552,13 @@ db.ref('market').on('value',snap=>{
   if(prevState!=='open' && state==='open'){
     hideSummary();
     if(!loadRoundStart()) beginRound();
+    if(wheelOn) setTimeout(()=>closeWheel(),2600);
   }
   if(prevState==='open' && state!=='open' && ready) showSummary();
+  if(state==='spin'){ hideSummary(); closePick(); openWheel(false); }
+  else if(state==='open' && ready && curWheel() && !me.ev[evKey()]) openWheel(true);  // 轉盤期間沒在線上的人，補套用
+  if(state!=='open' && state!=='spin') $('tip').classList.remove('on');
+  checkNews(); checkEvent();
   render();
 });
 
@@ -448,7 +611,7 @@ function showSummary(){
     const w = Math.max(2,Math.abs(v)/vmax*100);
     const side = v>=0 ? 'flex-start' : 'flex-end';
     return '<div class="sr"><div class="top"><div class="l"><i style="background:var(--'+
-      (id==='A'?'a':id==='B'?'b':'c')+')"></i>'+s.name+'</div>'+
+      id.toLowerCase()+')"></i>'+s.name+'</div>'+
       '<div class="r" style="color:'+c+'"><span class="h">持有 '+me.hold[id]+'</span>'+
       (v>0?'+':'')+money(v)+'</div></div>'+
       '<div class="bar" style="justify-content:'+side+'"><i style="width:'+w.toFixed(1)+
@@ -576,6 +739,236 @@ function hideSummary(){
 }
 $('sum').addEventListener('click',()=>{ if($('sumFoot').textContent.indexOf('關閉')>=0) hideSummary(); });
 
+/* ───────── 事件：抽牌、命運轉盤、新聞、大事件 ───────── */
+const evKey=r=>gid+'_'+(r==null?round:r);
+function curWheel(){ const w=mk.wheel; return (w && w.gid===gid && w.round===round)?w:null; }
+function rng(seed){ return ()=>{ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+/* 這個人這回合的 3 張牌（用玩家編號＋局＋回合決定，重整也一樣） */
+function cardOrder(r){
+  const R=rng(hsh(pid+'|'+gid+'|'+r)), a=CARDS.map((_,i)=>i);
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(R()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a.slice(0,3);
+}
+function guardGet(k){ try{ return localStorage.getItem('kuya_stock_ev_'+k); }catch(e){ return null; } }
+function guardSet(k){ try{ localStorage.setItem('kuya_stock_ev_'+k,'1'); }catch(e){} }
+function writeRetry(upd){
+  if(!myRef) return;
+  myRef.update(upd).then(()=>{ $('sync').classList.remove('show'); })
+    .catch(()=>{ $('sync').classList.add('show'); setTimeout(()=>writeRetry(upd),2000); });
+}
+
+/* 抽牌：回合之間（含第 1 回合開盤前）跳出 3 張蓋牌 */
+let pickR=0, pickDone=false;
+function upcoming(){ return (state==='idle'||state==='closed') && done<ROUNDS ? done+1 : 0; }
+function checkPick(){
+  if(!ready || !introDone || !gid) return;
+  if($('pick').classList.contains('on')) return;
+  if($('sum').classList.contains('show') || wheelOn) return;
+  const r=upcoming(); if(!r) return;
+  if(me.card[evKey(r)]) return;
+  showPick(r);
+}
+function showPick(r){
+  pickR=r; pickDone=false;
+  $('pkSub').textContent='第 '+r+' 回合';
+  $('pkRow').innerHTML=cardOrder(r).map((ci,sl)=>{
+    const C=CARDS[ci];
+    return '<div class="pc '+(C.k==='機會'?'k1':'k2')+'" data-s="'+sl+'"><div class="in">'+
+      '<div class="bk">?</div><div class="f"><span class="k">'+C.k+'</span><div class="n">'+C.n+'</div><div class="d">'+C.d+'</div></div></div></div>';
+  }).join('');
+  $('pkMsg').textContent='選一張牌，效果在開盤時生效';
+  $('pkBtn').classList.remove('on');
+  $('pick').classList.add('on');
+}
+$('pkRow').addEventListener('click',e=>{
+  const c=e.target.closest('.pc'); if(!c || pickDone) return;
+  if(upcoming()!==pickR){ closePick(); return; }
+  pickDone=true;
+  const sl=+c.dataset.s, ci=cardOrder(pickR)[sl], key=evKey(pickR);
+  me.card[key]={s:sl,i:ci};
+  writeRetry({['card/'+key]:{s:sl,i:ci}});
+  c.classList.add('flip','mine');
+  setTimeout(()=>{ $('pkRow').querySelectorAll('.pc').forEach(x=>{ if(x!==c) x.classList.add('flip','miss'); }); },700);
+  const C=CARDS[ci];
+  $('pkMsg').innerHTML='你抽到 <b style="color:var(--txt)">'+C.k+'卡｜'+C.n+'</b><br>第 '+pickR+' 回合開盤時生效';
+  $('pkBtn').classList.add('on');
+});
+$('pkBtn').onclick=()=>closePick();
+function closePick(){ $('pick').classList.remove('on'); }
+
+/* 轉盤 SVG：8 格，0 度在正上方，順時針 */
+function wheelSVG(){
+  const cx=100,cy=100,R=96,step=360/WHEEL.length;
+  const pt=(a,r)=>{ const t=a*Math.PI/180; return [cx+r*Math.sin(t), cy-r*Math.cos(t)]; };
+  let h='<g id="wvG" style="transform-origin:100px 100px">';
+  WHEEL.forEach((w,i)=>{
+    const p0=pt(i*step,R), p1=pt((i+1)*step,R);
+    h+='<path d="M100 100L'+p0[0].toFixed(2)+' '+p0[1].toFixed(2)+'A'+R+' '+R+' 0 0 1 '+p1[0].toFixed(2)+' '+p1[1].toFixed(2)+'Z" fill="'+w.c+'" stroke="#0a0e14" stroke-width="1.5"/>';
+    h+='<g transform="rotate('+((i+.5)*step)+' 100 100)"><text x="100" y="36" text-anchor="middle" font-size="11.5" font-weight="800" fill="#fff" font-family="Noto Sans TC,PingFang TC,Microsoft JhengHei,sans-serif">'+w.t+'</text></g>';
+  });
+  h+='</g><circle cx="100" cy="100" r="97" fill="none" stroke="#ffd166" stroke-width="3"/><circle cx="100" cy="100" r="14" fill="#0a0e14" stroke="#ffd166" stroke-width="3"/>';
+  return h;
+}
+$('wvSvg').innerHTML=wheelSVG();
+let wheelOn=false, wheelRaf=0, wheelAt=0, wheelShown=false;
+function wheelAngle(w,p){
+  const step=360/WHEEL.length, fin=360*5+(360-(w.idx+.5+(w.jit||0))*step);
+  return fin*(1-Math.pow(1-p,4));
+}
+function openWheel(skipSpin){
+  const w=curWheel(); if(!w) return;
+  const pending=ready && !me.ev[evKey()];
+  if(wheelAt===w.seed && wheelShown){
+    /* 這一輪已經揭曉：還沒套用的（剛輸入名字進場）補套用，其他不再重播 */
+    if(pending){ if(!wheelOn){ wheelOn=true; $('wheelOv').classList.add('on'); } const ev=applyRoundEvents(); if(ev) showMine(ev,w); $('wvFoot').textContent='點畫面任一處關閉'; }
+    return;
+  }
+  if(wheelOn && wheelAt===w.seed) return;
+  wheelOn=true; wheelAt=w.seed; wheelShown=false;
+  $('wvSub').textContent='第 '+w.round+' 回合　命運轉盤';
+  $('wvRes').classList.remove('on'); $('wvMe').classList.remove('on'); $('wvMe').innerHTML=''; $('wvFoot').textContent='';
+  $('wheelOv').classList.add('on');
+  cancelAnimationFrame(wheelRaf);
+  const g=document.getElementById('wvG');
+  const step=()=>{
+    const p=skipSpin?1:Math.min(1,Math.max(0,(nowSrv()-(mk.spinAt||0))/SPIN_MS));
+    g.style.transform='rotate('+wheelAngle(w,p).toFixed(2)+'deg)';
+    if(p>=1){ revealWheel(w); return; }
+    wheelRaf=requestAnimationFrame(step);
+  };
+  wheelRaf=requestAnimationFrame(step);
+  /* 保險：畫面在背景時 requestAnimationFrame 會暫停，時間到仍要揭曉並套用效果 */
+  setTimeout(()=>{ if(wheelAt===w.seed && !wheelShown){ g.style.transform='rotate('+wheelAngle(w,1).toFixed(2)+'deg)'; revealWheel(w); } },
+    skipSpin?50:Math.max(0,(mk.spinAt||0)+SPIN_MS-nowSrv())+80);
+}
+function revealWheel(w){
+  if(wheelShown) return; wheelShown=true;
+  $('wvRes').querySelector('b').textContent=w.title;
+  $('wvRes').querySelector('span').textContent=w.desc;
+  $('wvRes').classList.add('on');
+  const ev=applyRoundEvents();
+  if(ev) showMine(ev,w);
+  $('wvFoot').textContent=ready?'點畫面任一處關閉':'';
+  if(state==='open') setTimeout(()=>closeWheel(),4000);
+}
+function closeWheel(){ wheelOn=false; cancelAnimationFrame(wheelRaf); $('wheelOv').classList.remove('on'); }
+$('wheelOv').addEventListener('click',()=>{ if(wheelShown) closeWheel(); });
+
+const sgn=a=>(a>0?'+':'')+money(a);
+function showMine(ev,w){
+  const C=CARDS[ev.c]||CARDS[5], rows=[];
+  if(C.hint){
+    const t=insiderText();
+    rows.push(['🎴 '+C.k+'卡｜'+C.n+'<br><span style="color:#e2c8ff">'+t+'</span>','',0]);
+    $('tip').innerHTML='🕵️ 內線消息：'+t; $('tip').classList.add('on');
+  }else{
+    rows.push(['🎴 '+C.k+'卡｜'+C.n+(C.f?'':'<br><span style="color:var(--dim)">'+C.d+'</span>'),C.f?sgn(ev.ca):'',ev.ca]);
+  }
+  const nm=w.sname||'';
+  if(w.k==='red') rows.push(ev.hit?['🧧 你被抽中了！天降紅包',sgn(ev.a),ev.a]:['🧧 這次沒被抽中紅包','',0]);
+  else if(w.k==='audit') rows.push(ev.hit?['🧾 你被抽中查稅',sgn(ev.a),ev.a]:['🧾 逃過一劫，沒被查到','',0]);
+  else if(w.k==='div') rows.push(ev.hit?['💰 持有 '+nm+'，領到股息',sgn(ev.a),ev.a]:['💰 你沒有持有 '+nm+'，沒領到股息','',0]);
+  else if(w.k==='cut') rows.push(ev.hit?['✂️ '+nm+' 減資，持股少了 '+ev.n+' 單位','約 '+sgn(ev.a),ev.a]:['✂️ 你沒有持有 '+nm+'，不受影響','',0]);
+  else rows.push(['🌐 全場一起：'+w.desc,'',0]);
+  $('wvMe').innerHTML=rows.map(r=>'<div class="'+(r[2]>0?'good':r[2]<0?'bad':'')+'">'+
+    (r[1]?'<span class="amt" style="color:'+(r[2]>0?'var(--up)':'var(--down)')+'">'+r[1]+'</span>':'')+r[0]+'</div>').join('');
+  setTimeout(()=>$('wvMe').classList.add('on'),400);
+}
+function planList(){ const p=mk.plan; return p?(Array.isArray(p)?p:Object.values(p)).filter(x=>x && x.kind!=='flash').sort((a,b)=>a.at-b.at):[]; }
+function insiderText(){
+  const n=planList()[0];
+  if(!n || !stocks[n.sid]) return '本回合沒有新聞，安心看盤';
+  const sec=Math.max(1,Math.round((n.at-(mk.openAt||n.at))/1000));
+  return '開盤後約 '+sec+' 秒，'+stocks[n.sid].name+' 會有「'+TAGT[n.tag]+'」消息';
+}
+
+/* 套用本回合的牌卡＋轉盤效果（每人每回合只套用一次，重整不重複） */
+function applyRoundEvents(){
+  if(!ready || !myRef) return null;
+  const w=curWheel(); if(!w) return null;
+  const r=w.round, key=evKey(r);
+  if(me.ev[key]) return me.ev[key];
+  if(guardGet(key)) return null;
+  const upd={};
+  let c=me.card[key];
+  if(!c){ const sl=Math.floor(Math.random()*3); c={s:sl,i:cardOrder(r)[sl],auto:1}; me.card[key]=c; upd['card/'+key]=c; closePick(); }
+  const before=totalAsset();
+  const pay=a=>{ a=Math.round(a)||0; if(a<0) a=-Math.min(Math.max(0,Math.floor(me.cash)),-a); me.cash+=a; return a; };
+  const C=CARDS[c.i]||CARDS[5];
+  const ev={c:c.i,w:w.k,hit:0,a:0,ca:C.f?pay(before*C.f):0};
+  if(w.k==='red'||w.k==='audit'){
+    if(hitOf(pid,w)){ ev.hit=1; ev.a=pay(totalAsset()*w.pct/100); }
+  }else if(w.k==='div'){
+    const h=me.hold[w.sid]||0, s=stocks[w.sid];
+    if(h>0&&s){ ev.hit=1; ev.a=pay(h*s.price*w.pct/100); }
+  }else if(w.k==='cut'){
+    const h=me.hold[w.sid]||0, s=stocks[w.sid];
+    if(h>0&&s){
+      const lose=Math.min(h,Math.max(1,Math.round(h*w.pct/100)));
+      me.hold[w.sid]=h-lose; if(!me.hold[w.sid]) me.cost[w.sid]=0;
+      ev.hit=1; ev.n=lose; ev.a=-Math.round(lose*s.price);
+    }
+  }
+  ev.d=Math.round(totalAsset()-before);
+  me.ev[key]=ev; guardSet(key);
+  if(state==='open' && playRound===r){ roundStartAsset+=ev.d; saveRoundStart(); }
+  upd['ev/'+key]=ev;
+  Object.assign(upd,{cash:+me.cash.toFixed(2),hold:me.hold,cost:me.cost,total:+totalAsset().toFixed(2),updatedAt:Date.now()});
+  writeRetry(upd);
+  render();
+  return ev;
+}
+
+/* 新聞快訊與大事件：只顯示這一局、這一回合、剛發生的 */
+let newsSeen=0, evSeen=0, newsHide=null;
+function banner(tag,text,isEv){
+  const el=$('newsTop');
+  el.querySelector('.tg').textContent=TAGT[tag]||'';
+  el.querySelector('.tx').textContent=text;
+  el.classList.toggle('ev',!!isEv);
+  el.classList.add('show');
+  clearTimeout(newsHide); newsHide=setTimeout(()=>el.classList.remove('show'),10000);
+}
+$('newsTop').addEventListener('click',()=>$('newsTop').classList.remove('show'));
+function checkNews(){
+  const n=mk.news; if(!n || n.gid!==gid || n.round!==round || n.at<=newsSeen) return;
+  newsSeen=n.at;
+  if(state!=='open' || nowSrv()-n.at>15000) return;
+  if(n.kind==='flash'){
+    if(nowSrv()-n.at>(n.dur||6000)) return;
+    fxShow('⚡ 閃電快訊',n.title,n.desc,'gold');
+    banner('flash','【閃電快訊】'+n.title+'　'+n.desc,true);
+    return;
+  }
+  banner(n.tag,'【快訊】'+n.t);
+  const first=planList()[0];
+  if(first && first.at===n.at) setTimeout(()=>$('tip').classList.remove('on'),4000);
+}
+function checkEvent(){
+  const e=mk.event; if(!e || e.gid!==gid || e.round!==round || e.at<=evSeen) return;
+  evSeen=e.at;
+  if(state!=='open' || nowSrv()-e.at>10000) return;
+  fxShow('主持人大事件',e.title,e.desc,e.k==='crash'?'down':'up');
+  banner(e.tag||'up','【大事件】'+e.title+'　'+e.desc,true);
+}
+function fxShow(a,b,c,cls){
+  const fx=$('evFx');
+  fx.querySelector('.a').textContent=a; fx.querySelector('.b').textContent=b; fx.querySelector('.c').textContent=c;
+  fx.className=cls; void fx.offsetWidth; fx.classList.add('play');
+}
+/* 新聞影響期間（出現後 13 秒內），在股票卡上標記 */
+function newsTagOf(id){
+  if(state!=='open') return '';
+  const t=nowSrv();
+  const n=planList().find(x=>x.sid===id && t>=x.at && t<x.at+13000);
+  if(n) return TAGT[n.tag];
+  const fl=mk.news;
+  if(fl && fl.kind==='flash' && fl.gid===gid && fl.round===round && t>=fl.at && t<fl.at+(fl.dur||6000) && (fl.sids||[]).indexOf(id)>=0) return '⚡ '+fl.title;
+  const e=mk.event;
+  if(e && e.gid===gid && e.round===round && e.sid===id && t<e.at+10000) return '🔥 大事件';
+  return '';
+}
+
 /* ───────── 資產 ───────── */
 function holdValue(){ return IDS.reduce((a,id)=> a + (stocks[id]? stocks[id].price*me.hold[id] : 0), 0); }
 function totalAsset(){ return me.cash + holdValue(); }
@@ -689,6 +1082,7 @@ function render(){
 
   const pill=$('statePill'); pill.className='';
   if(state==='open'){pill.textContent='開盤中';pill.className='open';}
+  else if(state==='spin'){pill.textContent='命運轉盤中…';pill.className='closing';}
   else if(state==='closed') pill.textContent=(playRound>=ROUNDS?'全部回合結束':'第 '+(playRound||Math.max(1,round-1))+' 回合結束，等待下一回合');
   else pill.textContent='尚未開盤';
 
@@ -700,11 +1094,12 @@ function render(){
     const mcls=s.mode==='growth'?'m-growth':s.mode==='spec'?'m-spec':'';
     const upct=(me.hold[id]&&me.cost[id])?(s.price/me.cost[id]-1)*100:0;
     const tcls=upct>=FX.glowPct?' hot':upct<=-FX.glowPct?' cold':'';
+    const nt=newsTagOf(id);
     return `<div class="card${sel===id?' sel':''}${tcls}" data-id="${id}" style="--k:var(${COLOR[id]})">
-      <div class="r1"><div class="nm">${s.name}</div><div class="mode ${mcls}">${MODE_LABEL[s.mode]||''}</div></div>
-      <div class="r2">
-        <div><span class="px num" style="color:${col}">${s.price.toFixed(1)}</span><span class="chg num" style="color:${col}">${chg>0?'+':''}${chg.toFixed(2)}%</span></div>
+      <div class="r1">
+        <div class="nmw"><span class="nm">${s.name}</span><span class="mode ${mcls}">${MODE_LABEL[s.mode]||''}</span>${nt?'<span class="ntag">'+nt+'</span>':''}</div>
         ${sparkline(s)}
+        <div class="pxw"><span class="px num" style="color:${col}">${s.price.toFixed(1)}</span><span class="chg num" style="color:${col}">${chg>0?'+':''}${chg.toFixed(2)}%</span></div>
       </div>
       <div class="r3">
         <span>持有 <b class="num">${me.hold[id]}</b> 單位</span>
@@ -716,7 +1111,7 @@ function render(){
 
   const s=stocks[sel];
   $('barName').textContent=s?s.name:'請先選一支股票';
-  $('barHint').textContent=!s?'—':!tradable()?'關盤中，暫停交易':`可買 ${Math.floor(me.cash/s.price)} 單位｜持有 ${me.hold[s.id]}`;
+  $('barHint').textContent=!s?'—':state==='spin'?'轉盤中，稍候開盤':!tradable()?'關盤中，暫停交易':`可買 ${Math.max(0,Math.floor(me.cash/s.price))} 單位｜持有 ${me.hold[s.id]}`;
   document.querySelectorAll('.tbtn').forEach(b=>{ b.disabled=!s||!tradable(); });
 }
 
@@ -744,11 +1139,14 @@ function enter(name){
   myRef=db.ref('players/'+pid);
   myRef.once('value').then(snap=>{
     const d=snap.val();
-    if(d){ me.cash=d.cash; me.hold=Object.assign({A:0,B:0,C:0},d.hold||{}); me.cost=Object.assign({A:0,B:0,C:0},d.cost||{}); }
+    if(d){ me.cash=d.cash; me.hold=Object.assign(Z4(),d.hold||{}); me.cost=Object.assign(Z4(),d.cost||{}); me.card=d.card||{}; me.ev=d.ev||{}; }
     else { myRef.set({name,cash:START_CASH,hold:me.hold,cost:me.cost,total:START_CASH,joinedAt:Date.now()}); resetStats(); }
     if(!loadRoundStart()) beginRound();
     ready=true;
     $('entry').style.display='none';
+    if(state==='spin') openWheel(false);
+    else if(state==='open' && curWheel() && !me.ev[evKey()]) openWheel(true);
+    if(state==='open') setTimeout(()=>{ if(wheelOn && wheelShown) closeWheel(); },5000);
     render();
   });
 }
@@ -792,7 +1190,7 @@ function skipIntro(){
   Array.prototype.forEach.call(document.querySelectorAll('.skipBtn'),function(b){ b.onclick=skipIntro; });
 })();
 
-setInterval(render,300);
+setInterval(()=>{ render(); checkPick(); },300);
 })();
 </script>
 </body>
