@@ -414,34 +414,43 @@ function tick(s){
     s.dir = s.mode==='spec' ? (Math.random()<0.5?-1:1) : 0;
   }
   let amp=ampOf(s.mode)*roundAmp;
-  /* 事件偏移：轉盤（主力進場／出貨）、新聞（出現 3 秒後持續 10 秒）、主持人利多 */
+  /* 事件偏移：轉盤（主力進場／出貨，整回合的小偏移）
+     ＋短事件（新聞、閃電快訊、主持人利多）：說漲／說跌的事件期間「方向保證」，每一跳都往該方向走 */
   const sNow=Date.now()+srvOffset;
-  let bias=0;
+  let bias=0, force=0;
   if(roundBias && roundBias.sid===s.id) bias+=roundBias.b;
   let frozen=false;
   plan.forEach(n=>{
     if(n.kind==='flash'){
       if(!n.f || sNow<n.at || sNow>=n.at+n.dur) return;
       if(n.fk==='double') amp*=2;
-      else if(n.fk==='bull') bias+=0.005;
-      else if(n.fk==='bear') bias-=0.005;
+      else if(n.fk==='bull'){ bias+=0.005; force+=1; }
+      else if(n.fk==='bear'){ bias-=0.005; force-=1; }
       else if(n.fk==='freeze') frozen=true;
-      else if(n.fk==='swap'){ if(s.id===n.hi) bias-=0.009; if(s.id===n.lo) bias+=0.009; }
+      else if(n.fk==='swap'){ if(s.id===n.hi){ bias-=0.009; force-=1; } if(s.id===n.lo){ bias+=0.009; force+=1; } }
       return;
     }
     if(n.sid!==s.id || sNow<n.at+3000 || sNow>=n.at+13000) return;
-    if(n.tag==='q'){ bias+=(n.dir||1)*TAGS.q.b; amp*=1.8; }
-    else bias+=TAGS[n.tag].b;
+    if(n.tag==='q'){ bias+=(n.dir||1)*TAGS.q.b; amp*=1.8; }      // ❓ 無法預測：不保證方向
+    else { bias+=TAGS[n.tag].b; force+=Math.sign(TAGS[n.tag].b); }
   });
-  if(goodBias && goodBias.sid===s.id && sNow<goodBias.until) bias+=0.01;
+  if(goodBias && goodBias.sid===s.id && sNow<goodBias.until){ bias+=0.01; force+=1; }
+  force=Math.sign(force);
   if(frozen){ schedule(s); return; }   // 市場凍結：這一跳不動
   const mag=amp*Math.pow(Math.random(),MODE_SHAPE[s.mode]);
   const drift = s.mode==='growth' ? P.drift
               : s.mode==='spec'   ? (s.dir||0)*P.dirP
               : 0;
-  let pct=drift+bias+(Math.random()<0.5?-mag:mag);
-  const bound=amp+Math.abs(drift)+Math.abs(bias);
-  pct=Math.max(-bound,Math.min(bound,pct));
+  let pct;
+  if(force){
+    /* 方向保證：每一跳都朝事件方向；幅度＝事件推力（0.5～1.5 倍隨機）＋自身波動的 1/4，
+       讓利多約 +5%、衝漲停約 +11%（投機股會再大一點），不會因為方向固定而暴衝 */
+    pct=force*(Math.abs(bias)*(0.5+Math.random()) + mag*0.25);
+  }else{
+    pct=drift+bias+(Math.random()<0.5?-mag:mag);
+    const bound=amp+Math.abs(drift)+Math.abs(bias);
+    pct=Math.max(-bound,Math.min(bound,pct));
+  }
   let np=s.price*(1+pct);
   const hiB=s.open*(1+P.limit), loB=s.open*(1-P.limit);
   if(np>=hiB||np<=loB){ s.limitHit=now; s.limitDir=(np>=hiB)?1:-1; }
